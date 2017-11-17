@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyBuilder
+target/
+**/target/
+
+# pyenv
+.python-version
+
+# pycharm
+.idea/
+**/.idea/
+
+# eclipse file
+.settings/
+.classpath
+.project
+
+**/.settings/
+
+# vim file
+*.swp
+*.un~
+
+# java
+# compile file
+*.class
+
+# package file
+*.jar
+
+
+# log file
+*.log
