@@ -1,4 +1,4 @@
-package cn.edu.zju.test;
+package cn.edu.zju.util;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
@@ -6,6 +6,7 @@ import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -38,7 +39,8 @@ public class TestDom4j {
         format.setIndent("    ");
         format.setEncoding("UTF-8");
         format.setNewlines(true);
-        FileWriter out = new FileWriter("foo.xml");
+
+        FileWriter out = new FileWriter("resources/foo.xml");
         XMLWriter writer = new XMLWriter(out, format);
         writer.write(document);
         writer.close();

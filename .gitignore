@@ -4,14 +4,12 @@ __pycache__/
 *$py.class
 
 # PyBuilder
-target/
 **/target/
 
 # pyenv
 .python-version
 
 # pycharm
-.idea/
 **/.idea/
 
 # eclipse file
@@ -35,3 +33,6 @@ target/
 
 # log file
 *.log
+
+# resource file
+**/resources/
