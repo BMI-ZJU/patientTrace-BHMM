@@ -14,7 +14,7 @@ BHMM for treatment event and inpatient journey analysis
     <order name="" dosage="" unit="" startTime="" stopTime=""/>
   </orders>
   <presces>
-    <presc name="" dosage="" unit="" number="" frequency="" />
+    <presc name="" dosage="" unit="" number="" frequency="" date=""/>
   </presces>
   <operations>
     <operation name="" startTime="" stopTime=""></operation>
@@ -30,4 +30,8 @@ BHMM for treatment event and inpatient journey analysis
 * 需后续进一步处理
 
 ### 使用
+
+## 几个问题
+
+1. 对于处方的数据库，在`PRESC_MASTER`数据表中，以`PRESC_NO`和`PRESC_DATE`作为主键，在`PRESC_DETAIL`中，同样以`PRESC_NO`,`PRESC_DATE`和`ITEM_NO`作为主键。但是仅`PRESC_NO`	作为外键，数据库结构存在问题。
 

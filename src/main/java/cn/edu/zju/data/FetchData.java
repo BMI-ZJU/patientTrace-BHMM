@@ -9,10 +9,7 @@ import org.dom4j.io.XMLWriter;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 import static cn.edu.zju.util.ManageConnection.close;
 
@@ -89,6 +86,16 @@ public class FetchData {
      */
     private void saveOne(ResultSet visitSet, String patientId) {
         String selectOrders = "SELECT * FROM DATA_SOURCE.ORDERS WHERE PATIENT_ID = ? AND VISIT_ID = ?";
+        String selectPrescMaster = "SELECT PRESC_NO, PRESC_DATE FROM DATA_SOURCE.PRESC_MASTER WHERE PATIENT_ID = ? AND VISIT_ID = ?";
+        String selectPrescDetail = "SELECT * FROM DATA_SOURCE.PRESC_DETAIL WHERE PRESC_NO = ? AND to_char(PRESC_DATE, 'yyyy-mm-dd')=?";
+
+        PreparedStatement orderStatement = null;
+        ResultSet orderSet = null;
+
+        PreparedStatement prescMasterStatement = null;
+        ResultSet prescMasterSet = null;
+        PreparedStatement prescDetailStatement = null;
+        ResultSet prescDetailSet = null;
 
         try {
             // 生成文档保存的路径
@@ -104,10 +111,11 @@ public class FetchData {
                     .addAttribute("admissionTime", admissionTime)
                     .addAttribute("dischargeTime", dischargeTime);
 
-            PreparedStatement orderStatement = connection.prepareStatement(selectOrders);
+            // 医嘱信息的处理流程
+            orderStatement = connection.prepareStatement(selectOrders);
             orderStatement.setString(1, patientId);
             orderStatement.setString(2, visitId);
-            ResultSet orderSet = orderStatement.executeQuery();
+            orderSet = orderStatement.executeQuery();
 
             Element orders = root.addElement("orders");
             while (orderSet.next()) {
@@ -124,16 +132,48 @@ public class FetchData {
                         .addAttribute("stopTime", stopTime);
             }
 
+            // TODO: 处方信息的处理
+            prescMasterStatement = connection.prepareStatement(selectPrescMaster);
+            prescMasterStatement.setString(1, patientId);
+            prescMasterStatement.setString(2, visitId);
+            prescMasterSet = prescMasterStatement.executeQuery();
+
+            Element presces = root.addElement("presces");
+            while (prescMasterSet.next()) {
+                int prescNo = prescMasterSet.getInt("PRESC_NO");
+                String prescDate = prescMasterSet.getString("PRESC_DATE").substring(0, 10);
+                prescDetailStatement = connection.prepareStatement(selectPrescDetail);
+                prescDetailStatement.setInt(1, prescNo);
+                prescDetailStatement.setString(2, prescDate);
+                prescDetailSet = prescDetailStatement.executeQuery();
+
+                while (prescDetailSet.next()) {
+                    presces.addElement("presc")
+                            .addAttribute("name", prescDetailSet.getString("DRUG_NAME"))
+                            .addAttribute("dosage", prescDetailSet.getString("DOSAGE"))
+                            .addAttribute("unit", prescDetailSet.getString("QUANTITY"))
+                            .addAttribute("frequency", prescDetailSet.getString("FREQUENCY"))
+                            .addAttribute("date", prescDate);
+                }
+            }
+
+            // TODO: 手术信息的处理
+
+            // 写入文件
             FileWriter out = new FileWriter(fileName);
             XMLWriter writer = new XMLWriter(out, format);
             writer.write(document);
             writer.close();
 
-            // 关闭所使用的资源
-            close(orderSet);
-            close(orderStatement);
         } catch (SQLException | IOException e) {
             e.printStackTrace();
+        } finally {
+            close(orderSet);
+            close(orderStatement);
+            close(prescMasterSet);
+            close(prescDetailSet);
+            close(prescMasterStatement);
+            close(prescDetailStatement);
         }
     }
 
