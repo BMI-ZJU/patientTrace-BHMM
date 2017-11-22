@@ -29,7 +29,7 @@ public class TestConnection {
             statement.setString(1, "F638132");
             set = statement.executeQuery();
             if (set.next()) {
-                System.out.println(set.getString("NAME"));
+                System.out.println(set.getString(1));
                 System.out.println(set.getString("SEX"));
                 System.out.println(set.getDate("DATE_OF_BIRTH"));
             }

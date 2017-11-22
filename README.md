@@ -17,7 +17,9 @@ BHMM for treatment event and inpatient journey analysis
     <presc name="" dosage="" unit="" number="" frequency="" date=""/>
   </presces>
   <operations>
-    <operation name="" startTime="" stopTime=""></operation>
+    <operation startTime="" stopTime="">
+      <item name=""></item>
+    </operation>
   </operations>
 </patientTrace>
 ```

@@ -85,9 +85,12 @@ public class FetchData {
      * @param patientId 病人的ID
      */
     private void saveOne(ResultSet visitSet, String patientId) {
+        // TODO : 将整个函数分解成小函数
         String selectOrders = "SELECT * FROM DATA_SOURCE.ORDERS WHERE PATIENT_ID = ? AND VISIT_ID = ?";
         String selectPrescMaster = "SELECT PRESC_NO, PRESC_DATE FROM DATA_SOURCE.PRESC_MASTER WHERE PATIENT_ID = ? AND VISIT_ID = ?";
         String selectPrescDetail = "SELECT * FROM DATA_SOURCE.PRESC_DETAIL WHERE PRESC_NO = ? AND to_char(PRESC_DATE, 'yyyy-mm-dd')=?";
+        String selectOperation = "SELECT OPER_ID, START_DATE_TIME, END_DATE_TIME FROM DATA_SOURCE.OPERATION WHERE PATIENT_ID = ? AND VISIT_ID = ?";
+        String selectOperItem = "SELECT OPERATION FROM DATA_SOURCE.OPER_ITEM WHERE PATIENT_ID = ? AND VISIT_ID = ? AND OPER_ID = ?";
 
         PreparedStatement orderStatement = null;
         ResultSet orderSet = null;
@@ -96,6 +99,11 @@ public class FetchData {
         ResultSet prescMasterSet = null;
         PreparedStatement prescDetailStatement = null;
         ResultSet prescDetailSet = null;
+
+        PreparedStatement operationStatement = null;
+        ResultSet operationSet = null;
+        PreparedStatement operItemStatement = null;
+        ResultSet operItemSet = null;
 
         try {
             // 生成文档保存的路径
@@ -132,7 +140,7 @@ public class FetchData {
                         .addAttribute("stopTime", stopTime);
             }
 
-            // TODO: 处方信息的处理
+            // 处方信息的处理
             prescMasterStatement = connection.prepareStatement(selectPrescMaster);
             prescMasterStatement.setString(1, patientId);
             prescMasterStatement.setString(2, visitId);
@@ -158,6 +166,28 @@ public class FetchData {
             }
 
             // TODO: 手术信息的处理
+            operationStatement = connection.prepareStatement(selectOperation);
+            operationStatement.setString(1, patientId);
+            operationStatement.setString(2, visitId);
+            operationSet = operationStatement.executeQuery();
+
+            Element operations = root.addElement("operations");
+            while(operationSet.next()) {
+                int operId = operationSet.getInt(1);
+                operations.addAttribute("startTime", operationSet.getString("START_DATE_TIME"))
+                        .addAttribute("stopTime", operationSet.getString("END_DATE_TIME"));
+
+                operItemStatement = connection.prepareStatement(selectOperItem);
+                operItemStatement.setString(1, patientId);
+                operItemStatement.setString(2, visitId);
+                operItemStatement.setInt(3, operId);
+                operItemSet = operItemStatement.executeQuery();
+
+                while(operItemSet.next()) {
+                    operations.addElement("item")
+                            .addAttribute("name", operItemSet.getString(1));
+                }
+            }
 
             // 写入文件
             FileWriter out = new FileWriter(fileName);
@@ -174,6 +204,10 @@ public class FetchData {
             close(prescDetailSet);
             close(prescMasterStatement);
             close(prescDetailStatement);
+            close(operationSet);
+            close(operationStatement);
+            close(operItemSet);
+            close(operItemStatement);
         }
     }
 
