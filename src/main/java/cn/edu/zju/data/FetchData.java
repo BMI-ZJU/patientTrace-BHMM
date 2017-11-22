@@ -38,7 +38,6 @@ public class FetchData {
     }
 
     private void init() {
-        connection = ManageConnection.getConnection(url, username, password);
         format.setEncoding("UTF-8");
         format.setNewlines(true);
         format.setIndent(true);
@@ -48,6 +47,8 @@ public class FetchData {
     public void fetchAndSave() {
         String selectPatient = "SELECT * FROM DATA_SOURCE.PATIENT";
         String selectVisit = "SELECT * FROM DATA_SOURCE.VISIT WHERE PATIENT_ID = ?";
+
+        connection = ManageConnection.getConnection(url, username, password);
 
         try {
             PreparedStatement patientStatement = connection.prepareStatement(selectPatient);
@@ -85,25 +86,6 @@ public class FetchData {
      * @param patientId 病人的ID
      */
     private void saveOne(ResultSet visitSet, String patientId) {
-        // TODO : 将整个函数分解成小函数
-        String selectOrders = "SELECT * FROM DATA_SOURCE.ORDERS WHERE PATIENT_ID = ? AND VISIT_ID = ?";
-        String selectPrescMaster = "SELECT PRESC_NO, PRESC_DATE FROM DATA_SOURCE.PRESC_MASTER WHERE PATIENT_ID = ? AND VISIT_ID = ?";
-        String selectPrescDetail = "SELECT * FROM DATA_SOURCE.PRESC_DETAIL WHERE PRESC_NO = ? AND to_char(PRESC_DATE, 'yyyy-mm-dd')=?";
-        String selectOperation = "SELECT OPER_ID, START_DATE_TIME, END_DATE_TIME FROM DATA_SOURCE.OPERATION WHERE PATIENT_ID = ? AND VISIT_ID = ?";
-        String selectOperItem = "SELECT OPERATION FROM DATA_SOURCE.OPER_ITEM WHERE PATIENT_ID = ? AND VISIT_ID = ? AND OPER_ID = ?";
-
-        PreparedStatement orderStatement = null;
-        ResultSet orderSet = null;
-
-        PreparedStatement prescMasterStatement = null;
-        ResultSet prescMasterSet = null;
-        PreparedStatement prescDetailStatement = null;
-        ResultSet prescDetailSet = null;
-
-        PreparedStatement operationStatement = null;
-        ResultSet operationSet = null;
-        PreparedStatement operItemStatement = null;
-        ResultSet operItemSet = null;
 
         try {
             // 生成文档保存的路径
@@ -119,6 +101,28 @@ public class FetchData {
                     .addAttribute("admissionTime", admissionTime)
                     .addAttribute("dischargeTime", dischargeTime);
 
+            getOrders(patientId, visitId, root);
+            getPresc(patientId, visitId, root);
+            getOperation(patientId, visitId, root);
+
+            // 写入文件
+            FileWriter out = new FileWriter(fileName);
+            XMLWriter writer = new XMLWriter(out, format);
+            writer.write(document);
+            writer.close();
+
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getOrders(String patientId, String visitId, Element root) {
+        String selectOrders = "SELECT * FROM DATA_SOURCE.ORDERS WHERE PATIENT_ID = ? AND VISIT_ID = ?";
+
+        PreparedStatement orderStatement = null;
+        ResultSet orderSet = null;
+
+        try{
             // 医嘱信息的处理流程
             orderStatement = connection.prepareStatement(selectOrders);
             orderStatement.setString(1, patientId);
@@ -140,6 +144,25 @@ public class FetchData {
                         .addAttribute("stopTime", stopTime);
             }
 
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(orderSet);
+            close(orderStatement);
+        }
+
+    }
+
+    private void getPresc(String patientId, String visitId, Element root) {
+        String selectPrescMaster = "SELECT PRESC_NO, PRESC_DATE FROM DATA_SOURCE.PRESC_MASTER WHERE PATIENT_ID = ? AND VISIT_ID = ?";
+        String selectPrescDetail = "SELECT * FROM DATA_SOURCE.PRESC_DETAIL WHERE PRESC_NO = ? AND to_char(PRESC_DATE, 'yyyy-mm-dd')=?";
+
+        PreparedStatement prescMasterStatement = null;
+        ResultSet prescMasterSet = null;
+        PreparedStatement prescDetailStatement = null;
+        ResultSet prescDetailSet = null;
+
+        try{
             // 处方信息的处理
             prescMasterStatement = connection.prepareStatement(selectPrescMaster);
             prescMasterStatement.setString(1, patientId);
@@ -164,8 +187,26 @@ public class FetchData {
                             .addAttribute("date", prescDate);
                 }
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            close(prescDetailSet);
+            close(prescDetailStatement);
+            close(prescMasterSet);
+            close(prescMasterStatement);
+        }
+    }
 
-            // TODO: 手术信息的处理
+    private void getOperation(String patientId, String visitId, Element root) {
+        String selectOperation = "SELECT OPER_ID, START_DATE_TIME, END_DATE_TIME FROM DATA_SOURCE.OPERATION WHERE PATIENT_ID = ? AND VISIT_ID = ?";
+        String selectOperItem = "SELECT OPERATION FROM DATA_SOURCE.OPER_ITEM WHERE PATIENT_ID = ? AND VISIT_ID = ? AND OPER_ID = ?";
+
+        PreparedStatement operationStatement = null;
+        ResultSet operationSet = null;
+        PreparedStatement operItemStatement = null;
+        ResultSet operItemSet = null;
+
+        try {
             operationStatement = connection.prepareStatement(selectOperation);
             operationStatement.setString(1, patientId);
             operationStatement.setString(2, visitId);
@@ -188,27 +229,15 @@ public class FetchData {
                             .addAttribute("name", operItemSet.getString(1));
                 }
             }
-
-            // 写入文件
-            FileWriter out = new FileWriter(fileName);
-            XMLWriter writer = new XMLWriter(out, format);
-            writer.write(document);
-            writer.close();
-
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            close(orderSet);
-            close(orderStatement);
-            close(prescMasterSet);
-            close(prescDetailSet);
-            close(prescMasterStatement);
-            close(prescDetailStatement);
-            close(operationSet);
-            close(operationStatement);
             close(operItemSet);
             close(operItemStatement);
+            close(operationSet);
+            close(operationStatement);
         }
+
     }
 
     public static void main(String[] args) {
