@@ -47,6 +47,7 @@ public class FetchData {
     public void fetchAndSave() {
         String selectPatient = "SELECT * FROM DATA_SOURCE.PATIENT";
         String selectVisit = "SELECT * FROM DATA_SOURCE.VISIT WHERE PATIENT_ID = ?";
+        int trace_num = 0;
 
         connection = ManageConnection.getConnection(url, username, password);
 
@@ -62,10 +63,15 @@ public class FetchData {
                 while (visitSet.next()) {
                     // 只有当该病人有visit的情况下才进行记录，且每次visit作为一个记录保存下来
                     saveOne(visitSet, patientId);
+
+                    trace_num ++;
+
+                    if (trace_num % 100 == 0) {
+                        System.out.println(trace_num);
+                    }
                 }
                 close(visitSet);
                 close(visitStatement);
-                break;
             }
 
             // 关闭所使用的资源
@@ -186,12 +192,13 @@ public class FetchData {
                             .addAttribute("frequency", prescDetailSet.getString("FREQUENCY"))
                             .addAttribute("date", prescDate);
                 }
+
+                close(prescDetailSet);
+                close(prescDetailStatement);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            close(prescDetailSet);
-            close(prescDetailStatement);
             close(prescMasterSet);
             close(prescMasterStatement);
         }
@@ -228,12 +235,13 @@ public class FetchData {
                     operations.addElement("item")
                             .addAttribute("name", operItemSet.getString(1));
                 }
+
+                close(operItemSet);
+                close(operItemStatement);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            close(operItemSet);
-            close(operItemStatement);
             close(operationSet);
             close(operationStatement);
         }
