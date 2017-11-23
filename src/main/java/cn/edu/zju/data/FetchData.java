@@ -137,17 +137,12 @@ public class FetchData {
 
             Element orders = root.addElement("orders");
             while (orderSet.next()) {
-                String name = orderSet.getString("ORDER_TEXT");
-                String dosage = orderSet.getString("DOSAGE");
-                String unit = orderSet.getString("DOSAGE_UNITS");
-                String startTime = orderSet.getString("START_DATE_TIME");
-                String stopTime = orderSet.getString("STOP_DATE_TIME");
                 orders.addElement("order")
-                        .addAttribute("name", name)
-                        .addAttribute("dosage", dosage)
-                        .addAttribute("unit", unit)
-                        .addAttribute("startTime", startTime)
-                        .addAttribute("stopTime", stopTime);
+                        .addAttribute("name", orderSet.getString("ORDER_TEXT"))
+                        .addAttribute("dosage", orderSet.getString("DOSAGE"))
+                        .addAttribute("unit", orderSet.getString("DOSAGE_UNITS"))
+                        .addAttribute("startTime", orderSet.getString("START_DATE_TIME"))
+                        .addAttribute("stopTime", orderSet.getString("STOP_DATE_TIME"));
             }
 
         } catch (SQLException e) {
@@ -189,6 +184,7 @@ public class FetchData {
                             .addAttribute("name", prescDetailSet.getString("DRUG_NAME"))
                             .addAttribute("dosage", prescDetailSet.getString("DOSAGE"))
                             .addAttribute("unit", prescDetailSet.getString("QUANTITY"))
+                            .addAttribute("quantity", prescDetailSet.getString("QUANTITY"))
                             .addAttribute("frequency", prescDetailSet.getString("FREQUENCY"))
                             .addAttribute("date", prescDate);
                 }
