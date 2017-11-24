@@ -14,7 +14,7 @@ BHMM for treatment event and inpatient journey analysis
     <order name="" dosage="" unit="" startTime="" stopTime=""/>
   </orders>
   <presces>
-    <presc name="" dosage="" unit="" number="" frequency="" date=""/>
+    <presc name="" dosage="" unit="" quantity="" frequency="" date=""/>
   </presces>
   <operations>
     <operation startTime="" stopTime="">
@@ -32,6 +32,10 @@ BHMM for treatment event and inpatient journey analysis
 * 需后续进一步处理
 
 ### 使用
+
+使用csv存储吧
+
+
 
 ## 几个问题
 

@@ -96,7 +96,7 @@ public class FetchData {
         try {
             // 生成文档保存的路径
             String visitId = visitSet.getString("VISIT_ID");
-            String rootPath = "src/main/resources/patientTrace/";
+            String rootPath = "resources/patientTrace/";
             String fileName = rootPath + patientId + "_" + visitId + ".xml";
 
             Document document = DocumentHelper.createDocument();
@@ -183,7 +183,7 @@ public class FetchData {
                     presces.addElement("presc")
                             .addAttribute("name", prescDetailSet.getString("DRUG_NAME"))
                             .addAttribute("dosage", prescDetailSet.getString("DOSAGE"))
-                            .addAttribute("unit", prescDetailSet.getString("QUANTITY"))
+                            .addAttribute("unit", prescDetailSet.getString("DOSAGE_UNITS"))
                             .addAttribute("quantity", prescDetailSet.getString("QUANTITY"))
                             .addAttribute("frequency", prescDetailSet.getString("FREQUENCY"))
                             .addAttribute("date", prescDate);
