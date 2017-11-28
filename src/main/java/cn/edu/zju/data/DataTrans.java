@@ -5,7 +5,6 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,21 +19,34 @@ import java.util.Map.Entry;
  */
 public class DataTrans {
 
-    public void processAll(String rootPath) throws DocumentException, ParseException, IOException {
+    /**
+     *
+     * @param rootPath 资源文件根目录
+     * @param covered 是否覆盖原有的结果文件
+     * @throws DocumentException xml dom 解析错误
+     * @throws ParseException 解析日期错误
+     * @throws IOException 文件读写错误
+     */
+    public void processAll(String rootPath, boolean covered) throws DocumentException, ParseException, IOException {
         File root = new File(rootPath);
         File[] files = root.listFiles();
 
         assert files != null;
         for (File file: files) {
-            processOne(file.getPath());
+            processOne(file.getPath(), covered);
         }
     }
 
     // 统计有哪些独立的医嘱、处方、手术项，然后再填入
-    public void processOne(String path) throws DocumentException, ParseException, IOException {
+    public void processOne(String path, boolean covered) throws DocumentException, ParseException, IOException {
         Document document = parse(path);
         String savePath = path.replace(".xml", ".csv"); //新的保存路径，改为csv文件
         savePath = savePath.replace("patientTrace", "patientCSV");
+
+        if (!covered) { // 如果不是覆盖模式，则判断文件是否存在，存在的话就直接返回
+            File saveFile = new File(savePath);
+            if (saveFile.exists()) return;
+        }
         System.out.println(path);
 
         List<String> headers = new ArrayList<>(); // 列名，[patientId, 第1天, 第2天, ..., 第n天]
@@ -112,8 +124,7 @@ public class DataTrans {
             String startTime = order.attributeValue("startTime");
             int row = rowName.get(name);
             int column = calHospitalizedDays(admissionTime, startTime) - 1; // 索引减1
-            if (column < 0) continue;
-            if (column >= content[0].length) continue;
+            if (column >= content[0].length || column < 0) continue;
 
             if (order.attribute("dosage") != null) {
                 String dosage = order.attributeValue("dosage");
@@ -140,6 +151,7 @@ public class DataTrans {
                 if(presc.attribute("frequency") != null) {
                     frequency = presc.attributeValue("frequency");
                     if (frequency.replaceAll("\\D+", "").equals("")) {
+                        if (column >= content[0].length || column < 0) continue;
                         content[row][column] += dosage;
                     } else {
                         double freq = Double.parseDouble(frequency.replaceAll("\\D+", ""));
@@ -170,7 +182,7 @@ public class DataTrans {
         Element operation = root.element("operations");
         String startTime = operation.attributeValue("startTime");
         int column = calHospitalizedDays(admissionTime, startTime) - 1;
-        if (column >= content[0].length) {
+        if (column >= content[0].length || column < 0) {
             return;
         }
         List<Element> items = operation.elements();
@@ -225,6 +237,6 @@ public class DataTrans {
 
     public static void main(String[] args) throws DocumentException, ParseException, IOException {
         DataTrans dataTrans = new DataTrans();
-        dataTrans.processAll("resources/patientTrace/");
+        dataTrans.processAll("resources/patientTrace/", false);
     }
 }

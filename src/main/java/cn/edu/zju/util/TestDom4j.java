@@ -73,8 +73,5 @@ public class TestDom4j {
     }
 
     public static void main(String[] args) throws IOException, DocumentException {
-        String t = "1/日";
-        double f = Double.parseDouble(t.substring(0, t.length()-2));
-        System.out.println(f);
     }
 }
