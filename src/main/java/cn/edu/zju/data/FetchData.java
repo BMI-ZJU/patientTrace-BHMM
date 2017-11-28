@@ -44,7 +44,7 @@ public class FetchData {
         format.setIndent("    ");
     }
 
-    public void fetchAndSave() {
+    public void fetchAndSave(String rootPath) {
         String selectPatient = "SELECT * FROM DATA_SOURCE.PATIENT";
         String selectVisit = "SELECT * FROM DATA_SOURCE.VISIT WHERE PATIENT_ID = ?";
         int trace_num = 0;
@@ -62,7 +62,7 @@ public class FetchData {
                 ResultSet visitSet = visitStatement.executeQuery();
                 while (visitSet.next()) {
                     // 只有当该病人有visit的情况下才进行记录，且每次visit作为一个记录保存下来
-                    saveOne(visitSet, patientId);
+                    saveOne(visitSet, patientId, rootPath);
 
                     trace_num ++;
 
@@ -91,12 +91,11 @@ public class FetchData {
      * @param visitSet 根据patientId查询获得的一个Result Set，包含了该病人的就诊记录
      * @param patientId 病人的ID
      */
-    private void saveOne(ResultSet visitSet, String patientId) {
+    private void saveOne(ResultSet visitSet, String patientId, String rootPath) {
 
         try {
             // 生成文档保存的路径
             String visitId = visitSet.getString("VISIT_ID");
-            String rootPath = "resources/patientTrace/";
             String fileName = rootPath + patientId + "_" + visitId + ".xml";
 
             Document document = DocumentHelper.createDocument();
@@ -246,6 +245,7 @@ public class FetchData {
 
     public static void main(String[] args) {
         FetchData fetchData = new FetchData();
-        fetchData.fetchAndSave();
+        String rootPath = "resources/patientTrace/";
+        fetchData.fetchAndSave(rootPath);
     }
 }
