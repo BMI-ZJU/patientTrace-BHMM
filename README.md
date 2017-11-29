@@ -31,9 +31,17 @@ BHMM for treatment event and inpatient journey analysis
 * 一个病人存为一个文件
 * 需后续进一步处理
 
-### 使用
+### 进一步处理
 
-使用csv存储吧
+先用csv存储吧
+
+```
+[patientId], 第1天, 第2天, ……, 第n天
+静脉抽血,1,0,...,1
+血常规+CRP,0,1,...,0
+...
+牛黄解毒片,0,0,...,9
+```
 
 
 
