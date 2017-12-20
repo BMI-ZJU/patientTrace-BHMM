@@ -59,3 +59,17 @@ BHMM for treatment event and inpatient journey analysis
 3. 处方剂量上存在问题。如`448_1.xml`，处方信息中有一个为**聚乙二醇电解质散**，一项纪录为`<presc name="聚乙二醇电解质散" dosage="246.6" unit="g" quantity="18" frequency="1/日" date="" />`，另一项纪录为`<presc name="聚乙二醇电解质散" dosage="1" unit="袋" quantity="18" frequency="3/日" date="" />`，两者之间单位不同。人为理解大概为一袋是246.6g，quantity指的也是18袋。但数据转换程序中未作处理。
 4. 还有无法简单处理的。仍旧是`448_1.xml`中，滴鼻液和滴眼液，应该是一瓶一瓶的，dosage=0.1，unit=支，quantity=1。未知dosage以什么为单位，猜想应该是`ml`，但一瓶多少`ml`是未知的。不能得出持续时间为`quantity / (dosage * freq)`
 
+
+## TODO
+
+整理数据
+
+- [ ] 建一个简单的医嘱，处方，手术词典，用于将有错别字的，不同表述的，相同含义的词典对应到同一个词上去
+- [ ] 根据词典对数据进行重新整理
+- [ ] 列出每一种医嘱，处方，手术所对应的强度列表，对强度过多的某些医嘱，处方，手术进行归一化
+
+模型
+
+- [ ] LDA 基础模型
+- [ ] Squence-based Naive Bayes (SNB) 模型
+- [ ] Proposed BHMM 模型

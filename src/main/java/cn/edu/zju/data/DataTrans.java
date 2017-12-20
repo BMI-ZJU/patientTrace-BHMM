@@ -13,6 +13,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.Map.Entry;
 
+import static cn.edu.zju.data.SortData.listAll;
+import static cn.edu.zju.util.Rules.*;
+import static cn.edu.zju.util.Utils.sbc2dbc;
+
 /**
  * Created by gzx-zju on 2017/11/23.
  * 将从数据库中提取的XML格式的数据转换
@@ -81,8 +85,11 @@ public class DataTrans {
 
         int elements = 0;
 
+        // 处理医嘱和处方
         for (Element e : oAndp) {
             String name = e.attributeValue("name");
+            if (isMatchOperation(name)) continue; // 如果医嘱中的是手术信息，则丢弃，以手术记录表中的为准
+            name = transName(name);
             if (!rowName.containsKey(name)) {
                 rowName.put(name, elements);
                 elements ++;
@@ -101,8 +108,9 @@ public class DataTrans {
         for (Element e : items) {
             String name = e.attributeValue("name");
             if (name == null) continue;
-            String[] seperate = name.split("[+\\uff0b]"); // 在电子病历中，一个手术的不同项在同一条记录中，用+号分割
-            for (String item : seperate) {
+            String[] separate = name.split("[+\\uff0b]"); // 在电子病历中，一个手术的不同项在同一条记录中，用+号分割
+            for (String item : separate) {
+                item = sbc2dbc(item).toUpperCase();
                 if(!rowName.containsKey(item)) {
                     rowName.put(item, elements);
                     elements ++;
@@ -121,6 +129,9 @@ public class DataTrans {
         List<Element> orders = root.element("orders").elements();
         for (Element order : orders) {
             String name = order.attributeValue("name");
+            if (isMatchOperation(name)) continue; // 如果医嘱匹配为手术信息，跳过
+            // 对于名称的一系列变换
+            name = transName(name);
             String startTime = order.attributeValue("startTime");
             int row = rowName.get(name);
             int column = calHospitalizedDays(admissionTime, startTime) - 1; // 索引减1
@@ -140,6 +151,7 @@ public class DataTrans {
         List<Element> presces = root.element("presces").elements();
         for (Element presc : presces) {
             String name = presc.attributeValue("name");
+            name = transName(name);
             String date = presc.attributeValue("date");
 
             int row = rowName.get(name);
@@ -189,8 +201,9 @@ public class DataTrans {
         for (Element item : items) {
             String name = item.attributeValue("name");
             if (name == null) continue;
-            String[] seperate = name.split("[+\\uff0b]");
-            for (String i : seperate) {
+            String[] separate = name.split("[+\\uff0b]");
+            for (String i : separate) {
+                i = sbc2dbc(i).toUpperCase();
                 int row = rowName.get(i);
                 content[row][column] += 1;
             }
@@ -237,6 +250,7 @@ public class DataTrans {
 
     public static void main(String[] args) throws DocumentException, ParseException, IOException {
         DataTrans dataTrans = new DataTrans();
-        dataTrans.processAll("resources/patientTrace/", false);
+        dataTrans.processAll("resources/patientTrace/", true);
+        listAll();
     }
 }
