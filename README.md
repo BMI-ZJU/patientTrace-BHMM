@@ -13,12 +13,18 @@ BHMM for treatment event and inpatient journey analysis
   <orders>
     <order name="" dosage="" unit="" startTime="" stopTime=""/>
   </orders>
+  <labtests>
+    <labtest name="" time=""/>
+  </labtests>
+  <exams>
+    <exam class="" subclass="" item="" time=""/>
+  </exams>
   <presces>
     <presc name="" dosage="" unit="" quantity="" frequency="" date=""/>
   </presces>
   <operations>
     <operation startTime="" stopTime="">
-      <item name=""></item>
+      <item name=""/>
     </operation>
   </operations>
 </patientTrace>
@@ -64,8 +70,6 @@ BHMM for treatment event and inpatient journey analysis
 
 整理数据
 
-- [ ] 建一个简单的医嘱，处方，手术词典，用于将有错别字的，不同表述的，相同含义的词典对应到同一个词上去
-- [ ] 根据词典对数据进行重新整理
 - [ ] 列出每一种医嘱，处方，手术所对应的强度列表，对强度过多的某些医嘱，处方，手术进行归一化
 
 模型

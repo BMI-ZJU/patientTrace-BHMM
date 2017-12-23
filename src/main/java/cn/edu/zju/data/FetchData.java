@@ -106,7 +106,9 @@ public class FetchData {
                     .addAttribute("admissionTime", admissionTime)
                     .addAttribute("dischargeTime", dischargeTime);
 
-            getOrders(patientId, visitId, root);
+//            getOrders(patientId, visitId, root); // 医嘱信息不再使用，会与labtest, exam, operation表中的信息重复
+            getLabtest(patientId, visitId, root);
+            getExam(patientId, visitId, root);
             getPresc(patientId, visitId, root);
             getOperation(patientId, visitId, root);
 
@@ -151,6 +153,83 @@ public class FetchData {
             close(orderStatement);
         }
 
+    }
+
+    private void getLabtest(String patientId, String visitId, Element root) {
+        String selectLatest = "SELECT REQUESTED_DATE_TIME, SUBJECT FROM DATA_SOURCE.LABTEST_MASTER WHERE PATIENT_ID = ? AND VISIT_ID = ?";
+
+        PreparedStatement labtestStatement = null;
+        ResultSet labtestSet = null;
+
+        try {
+            labtestStatement = connection.prepareStatement(selectLatest);
+            labtestStatement.setString(1, patientId);
+            labtestStatement.setString(2, visitId);
+            labtestSet = labtestStatement.executeQuery();
+
+            Element labtests = root.addElement("labtests");
+
+            while (labtestSet.next()) {
+                String name = labtestSet.getString("SUBJECT");
+                String date = labtestSet.getString("REQUESTED_DATE_TIME").substring(0, 10);
+                Element labtest = labtests.addElement("labtest");
+
+                labtest.addAttribute("name", name);
+                labtest.addAttribute("time", date);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }finally {
+            close(labtestSet);
+            close(labtestStatement);
+        }
+    }
+
+    private void getExam(String patientId, String visitId, Element root) {
+        String selectExamMaster = "SELECT EXAM_NO, REQ_DATE_TIME FROM DATA_SOURCE.EXAM_MASTER WHERE PATIENT_ID = ? AND VISIT_ID = ?";
+        String selectExamItem = "SELECT EXAM_CLASS, EXAM_SUB_CLASS, EXAM_ITEM FROM DATA_SOURCE.EXAM_ITEM WHERE EXAM_NO = ?";
+
+        PreparedStatement examMasterStatement = null;
+        ResultSet examMasterSet = null;
+        PreparedStatement examItemStatement;
+        ResultSet examItemSet;
+
+        try {
+            examMasterStatement = connection.prepareStatement(selectExamMaster);
+            examMasterStatement.setString(1, patientId);
+            examMasterStatement.setString(2, visitId);
+            examMasterSet = examMasterStatement.executeQuery();
+
+            Element exams = root.addElement("exams");
+            while (examMasterSet.next()) {
+                String examNo = examMasterSet.getString("EXAM_NO");
+                String time = examMasterSet.getString("REQ_DATE_TIME").substring(0, 10);
+
+                examItemStatement = connection.prepareStatement(selectExamItem);
+                examItemStatement.setString(1, examNo);
+                examItemSet = examItemStatement.executeQuery();
+
+                while (examItemSet.next()) {
+                    String m_class = examItemSet.getString("EXAM_CLASS");
+                    String subclass = examItemSet.getString("EXAM_SUB_CLASS");
+                    String item = examItemSet.getString("EXAM_ITEM");
+
+                    Element exam = exams.addElement("exam");
+                    exam.addAttribute("class", m_class)
+                            .addAttribute("subclass", subclass)
+                            .addAttribute("item", item)
+                            .addAttribute("time", time);
+                }
+
+                close(examItemSet);
+                close(examItemStatement);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }finally {
+            close(examMasterSet);
+            close(examMasterStatement);
+        }
     }
 
     private void getPresc(String patientId, String visitId, Element root) {

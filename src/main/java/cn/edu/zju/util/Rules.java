@@ -42,7 +42,7 @@ public class Rules {
      * </ul>
      */
     public static boolean isMatchOperation(String origin) {
-        String regex = "常规准备|常规.*行|定于.*行|^行|今*行|.*局.*行|明.*行|拟.*行|全麻.*行|上.*行|体外.*行|下.*行|中.*行|^拟";
+        String regex = "常规准备|常规.*行|定于.*行|^行|今*行|.*局.*行|明.*行|拟.*行|全麻.*行|上.*行|体外.*行|下.*行|中.*行|^拟|局麻|全麻";
         Pattern pattern  = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(origin);
         return matcher.find();
@@ -108,29 +108,43 @@ public class Rules {
     }
 
     /**
+     * 输血
+     */
+    private static String replaceTransfusion(String origin) {
+        if (origin.equals("B型钠尿酸肽") || origin.equals("O型血交叉配血试验")) return origin;
+        String reg = "输.*型|输.*细胞|输.*血小板|输.*血浆|[ABO]B?型";
+        Pattern pattern = Pattern.compile(reg);
+        Matcher matcher = pattern.matcher(origin);
+        if (matcher.find()) {
+            return "输血";
+        }
+        return origin;
+    }
+
+    /**
      * 将干预行为的名称进行转换
      */
     public static String transName(String name) {
-        name = sbc2dbc(name).toUpperCase(); // 全角 --> 半角
+        name = sbc2dbc(name).toUpperCase(); // 全角 --> 半角，全大写
         String temp1 = replacePrepareSkin(name); // 备*皮 --> 备皮
         String temp2 = replaceConsultation(temp1); // *会诊 --> 会诊
         String temp3 = replaceTransfer(temp2); // 转*区 --> 转科
-        String temp4 = removeStar(temp3);
-        String temp5 = replaceRespirator(temp4);
-        return temp5;
+        String temp4 = removeStar(temp3); // 去除星星
+        String temp5 = replaceRespirator(temp4); // 脱机 训练
+        String temp6 = replaceTransfusion(temp5); // 输**红细胞，血小板 --> 输血
+        String temp7 = replaceDressing(temp6); // 换药
+        return temp7;
     }
 
 
     public static void main(String[] args) {
-        String temp1 = "、小换药";
-        String temp2 = ".(CO2)血二氧化碳总量";
-        String temp3 = "\\★盐酸艾司洛尔注射液(齐鲁)";
-        String temp4 = "`胸部正位";
+        String temp1 = "ABO血型反定型(A.B抗原)国产";
+        String temp2 = "AB型RH(D )阳性新鲜冰冻血浆";
+        String temp3 = "B型钠尿酸肽";
 
-        System.out.println(transName(temp1));
-        System.out.println(transName(temp2));
-        System.out.println(transName(temp3));
-        System.out.println(transName(temp4));
+        System.out.println(replaceTransfusion(temp1));
+        System.out.println(replaceTransfusion(temp2));
+        System.out.println(replaceTransfusion(temp3));
     }
 
 
