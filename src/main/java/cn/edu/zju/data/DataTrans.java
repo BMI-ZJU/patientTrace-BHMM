@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import static cn.edu.zju.data.SortData.listAll;
 import static cn.edu.zju.util.Rules.*;
 import static cn.edu.zju.util.Utils.sbc2dbc;
+import static cn.edu.zju.util.Utils.writeObject;
 
 /**
  * Created by gzx-zju on 2017/11/23.
@@ -36,9 +37,29 @@ public class DataTrans {
         File[] files = root.listFiles();
 
         assert files != null;
+        Map<String, Integer> counts = new HashMap<>();
         for (File file: files) {
-            processOne(file.getPath(), covered);
+//            processOne(file.getPath(), covered);
+            String name = file.getName();
+            String[] sp = name.split("_");
+            String patientId = sp[0];
+            String visitId = sp[1];
+
+            if (!counts.containsKey(patientId)) {
+                counts.put(patientId, 1);
+            } else {
+                counts.put(patientId, counts.get(patientId) + 1);
+            }
         }
+
+        int c = 0;
+        for (Entry<String, Integer> kv : counts.entrySet()) {
+            if (kv.getValue() > 1) {
+                c++;
+            }
+        }
+        writeObject("resources/save/patientId2visitId.model", counts);
+        System.out.println(c);
     }
 
     // 统计有哪些独立的医嘱、处方、手术项，然后再填入
@@ -251,6 +272,5 @@ public class DataTrans {
     public static void main(String[] args) throws DocumentException, ParseException, IOException {
         DataTrans dataTrans = new DataTrans();
         dataTrans.processAll("resources/patientTrace/", true);
-        listAll();
     }
 }
