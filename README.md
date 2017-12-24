@@ -10,9 +10,6 @@ BHMM for treatment event and inpatient journey analysis
 
 ```xml
 <patientTrace patientId="" admissionTime="" dischargeTime="">
-  <orders>
-    <order name="" dosage="" unit="" startTime="" stopTime=""/>
-  </orders>
   <labtests>
     <labtest name="" time=""/>
   </labtests>

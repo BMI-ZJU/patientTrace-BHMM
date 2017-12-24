@@ -171,6 +171,7 @@ public class FetchData {
 
             while (labtestSet.next()) {
                 String name = labtestSet.getString("SUBJECT");
+                if (name == null) continue;
                 String date = labtestSet.getString("REQUESTED_DATE_TIME").substring(0, 10);
                 Element labtest = labtests.addElement("labtest");
 

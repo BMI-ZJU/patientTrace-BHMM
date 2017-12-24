@@ -16,7 +16,6 @@ import java.util.Map.Entry;
 import static cn.edu.zju.data.SortData.listAll;
 import static cn.edu.zju.util.Rules.*;
 import static cn.edu.zju.util.Utils.sbc2dbc;
-import static cn.edu.zju.util.Utils.writeObject;
 
 /**
  * Created by gzx-zju on 2017/11/23.
@@ -37,29 +36,9 @@ public class DataTrans {
         File[] files = root.listFiles();
 
         assert files != null;
-        Map<String, Integer> counts = new HashMap<>();
         for (File file: files) {
-//            processOne(file.getPath(), covered);
-            String name = file.getName();
-            String[] sp = name.split("_");
-            String patientId = sp[0];
-            String visitId = sp[1];
-
-            if (!counts.containsKey(patientId)) {
-                counts.put(patientId, 1);
-            } else {
-                counts.put(patientId, counts.get(patientId) + 1);
-            }
+            processOne(file.getPath(), covered);
         }
-
-        int c = 0;
-        for (Entry<String, Integer> kv : counts.entrySet()) {
-            if (kv.getValue() > 1) {
-                c++;
-            }
-        }
-        writeObject("resources/save/patientId2visitId.model", counts);
-        System.out.println(c);
     }
 
     // 统计有哪些独立的医嘱、处方、手术项，然后再填入
@@ -100,15 +79,16 @@ public class DataTrans {
 
     //确定有哪些独立的医嘱、处方、手术
     private void determine(Element root, Map<String, Integer> rowName) throws ParseException {
-        List<Element> oAndp = new ArrayList<>();
-        oAndp.addAll(root.element("orders").elements());
-        oAndp.addAll(root.element("presces").elements());
+        String admissionTime = root.attributeValue("admissionTime");
+        String dischargeTime = root.attributeValue("dischargeTime");
 
         int elements = 0;
 
-        // 处理医嘱和处方
-        for (Element e : oAndp) {
+        // 处理处方
+        List<Element> prescs = root.element("presces").elements();
+        for (Element e : prescs) {
             String name = e.attributeValue("name");
+
             if (isMatchOperation(name)) continue; // 如果医嘱中的是手术信息，则丢弃，以手术记录表中的为准
             name = transName(name);
             if (!rowName.containsKey(name)) {
@@ -117,9 +97,42 @@ public class DataTrans {
             }
         }
 
+        // 处理检验信息
+        List<Element> labtests = root.element("labtests").elements();
+        for (Element e : labtests) {
+            String time = e.attributeValue("time");
+            if (calHospitalizedDays(admissionTime, time) < 0 || calHospitalizedDays(dischargeTime, time) > 1) {
+                continue;
+            }
+
+            String name = e.attributeValue("name");
+
+            if (name == null) continue;
+            name = transName(name);
+            if (!rowName.containsKey(name)) {
+                rowName.put(name, elements);
+                elements ++;
+            }
+
+        }
+
+        // 处理检查信息
+        List<Element> exams = root.element("exams").elements();
+        for (Element e : exams) {
+            String name = e.attributeValue("class");
+            name = sbc2dbc(name).toUpperCase();
+            String time = e.attributeValue("time");
+            if (calHospitalizedDays(admissionTime, time) < 0 || calHospitalizedDays(dischargeTime, time) > 1) {
+                continue;
+            }
+            if (!rowName.containsKey(name)) {
+                rowName.put(name, elements);
+                elements++;
+            }
+        }
+
         // 有病人的手术记录在出院后，直接丢弃数据
         Element operations = root.element("operations");
-        String dischargeTime = root.attributeValue("dischargeTime");
         String endTime = operations.attributeValue("stopTime");
         if (endTime == null || calHospitalizedDays(dischargeTime, endTime) > 1) {
             return;
@@ -146,26 +159,31 @@ public class DataTrans {
         String dischargeTime = root.attributeValue("dischargeTime");
         int hospitalizedDays = calHospitalizedDays(admissionTime, dischargeTime);
 
-        // 医嘱行为的处理。需要注意的有同一天可能会有相同的医嘱，需要对两个医嘱进行合并；同时一些医嘱没有dosage这个项，记为1
-        List<Element> orders = root.element("orders").elements();
-        for (Element order : orders) {
-            String name = order.attributeValue("name");
-            if (isMatchOperation(name)) continue; // 如果医嘱匹配为手术信息，跳过
-            // 对于名称的一系列变换
+        // 检验信息的处理
+        List<Element> labtests = root.element("labtests").elements();
+        for (Element labtest: labtests) {
+            String name = labtest.attributeValue("name");
+            if (name == null) continue;
             name = transName(name);
-            String startTime = order.attributeValue("startTime");
-            int row = rowName.get(name);
-            int column = calHospitalizedDays(admissionTime, startTime) - 1; // 索引减1
-            if (column >= content[0].length || column < 0) continue;
+            String date = labtest.attributeValue("time");
 
-            if (order.attribute("dosage") != null) {
-                String dosage = order.attributeValue("dosage");
-                double dos = Double.parseDouble(dosage);
-                content[row][column] += dos;
-            }else {
-                double dosage = 1;
-                content[row][column] += dosage;
-            }
+            int column = calHospitalizedDays(admissionTime, date) - 1;
+            if (column < 0 || calHospitalizedDays(dischargeTime, date) > 1) continue;
+            int row = rowName.get(name);
+            content[row][column] += 1;
+        }
+
+        // 检查信息的处理
+        List<Element> exams = root.element("exams").elements();
+        for (Element exam: exams) {
+            String name = exam.attributeValue("class");
+            name = transName(name);
+            String date = exam.attributeValue("time");
+
+            int column = calHospitalizedDays(admissionTime, date) - 1;
+            if (column < 0 || calHospitalizedDays(dischargeTime, date) > 1) continue;
+            int row = rowName.get(name);
+            content[row][column] += 1;
         }
 
         //  处方信息的处理。需要注意的有该处方只有第一天开了，但有一定的量，之后每天都需要填入，同时不应超过出院的日子。
@@ -272,5 +290,6 @@ public class DataTrans {
     public static void main(String[] args) throws DocumentException, ParseException, IOException {
         DataTrans dataTrans = new DataTrans();
         dataTrans.processAll("resources/patientTrace/", true);
+        listAll();
     }
 }
