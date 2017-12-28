@@ -24,90 +24,6 @@ public class Rules {
     }
 
     /**
-     * 如果在医嘱中匹配到以下内容(一般都是手术信息)则全部删除，默认以记录在手术信息中的为准
-     * <ul>
-     *     <li>常规准备</li>
-     *     <li>常规*行</li>
-     *     <li>定于*行</li>
-     *     <li>行</li>
-     *     <li>今*行</li>
-     *     <li>*局*行</li>
-     *     <li>明*行</li>
-     *     <li>拟*行</li>
-     *     <li>全麻*行</li>
-     *     <li>上*行</li>
-     *     <li>体外*行</li>
-     *     <li>下*行</li>
-     *     <li>中*行</li>
-     * </ul>
-     */
-    public static boolean isMatchOperation(String origin) {
-        String regex = "常规准备|常规.*行|定于.*行|^行|今*行|.*局.*行|明.*行|拟.*行|全麻.*行|上.*行|体外.*行|下.*行|中.*行|^拟|局麻|全麻";
-        Pattern pattern  = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(origin);
-        return matcher.find();
-    }
-    /**
-     * 脱呼吸机训练，脱机...等全转为  脱机 (passed)
-     */
-    public static String replaceRespirator(String origin) {
-        String reg = "脱.*机";
-        return origin.replaceAll(reg, "脱机");
-    }
-
-    /**
-     * 匹配备*皮，全都转换成为备皮 (passed)
-     */
-    private static String replacePrepareSkin(String origin) {
-        String reg = ".*[备背].*皮.*";
-        return origin.replaceAll(reg, "备皮");
-    }
-
-    /**
-     * 匹配 .*会诊， 全部转为会诊
-     */
-    private static String replaceConsultation(String origin) {
-        String reg = "会诊";
-        Pattern pattern = Pattern.compile(reg);
-        Matcher matcher = pattern.matcher(origin);
-        if (matcher.find()) {
-            return "会诊";
-        }
-        return origin;
-    }
-
-    /**
-     * 匹配 转.*[院科区]，全部转为 转科
-     */
-    private static String replaceTransfer(String origin) {
-        String reg0 = "^转[移化]";
-        Pattern pattern0 = Pattern.compile(reg0);
-        Matcher matcher0 = pattern0.matcher(origin);
-        if (matcher0.find())  return origin;
-
-        String reg1 = "^转";
-        Pattern pattern1 = Pattern.compile(reg1);
-        Matcher matcher1 = pattern1.matcher(origin);
-        if (matcher1.find()) {
-            return "转科";
-        }
-        return origin;
-    }
-
-    /**
-     * 换药
-     */
-    private static String replaceDressing(String origin) {
-        String reg = "换药";
-        Pattern pattern = Pattern.compile(reg);
-        Matcher matcher = pattern.matcher(origin);
-        if (matcher.find()) {
-            return "换药";
-        }
-        return origin;
-    }
-
-    /**
      * 输血
      */
     private static String replaceTransfusion(String origin) {
@@ -122,29 +38,181 @@ public class Rules {
     }
 
     /**
+     * 去除最后一个 '等' 字
+     */
+    private static String removeEt(String name) {
+        String reg = "等$";
+        return name.replaceAll(reg, "");
+    }
+
+    /**
+     * 将***胰岛素注射液 全转为 胰岛素注射液
+     */
+    private static String replaceInsulin(String origin) {
+        String reg = "胰岛素.*注射";
+        Pattern pattern = Pattern.compile(reg);
+        Matcher matcher = pattern.matcher(origin);
+        if (matcher.find()) {
+            return "胰岛素注射液";
+        }
+        return origin;
+    }
+
+    /**
      * 将干预行为的名称进行转换
      */
     public static String transName(String name) {
         name = sbc2dbc(name).toUpperCase(); // 全角 --> 半角，全大写
-        String temp1 = replacePrepareSkin(name); // 备*皮 --> 备皮
-        String temp2 = replaceConsultation(temp1); // *会诊 --> 会诊
-        String temp3 = replaceTransfer(temp2); // 转*区 --> 转科
-        String temp4 = removeStar(temp3); // 去除星星
-        String temp5 = replaceRespirator(temp4); // 脱机 训练
-        String temp6 = replaceTransfusion(temp5); // 输**红细胞，血小板 --> 输血
-        String temp7 = replaceDressing(temp6); // 换药
-        return temp7;
+        String temp1 = removeStar(name); // 去除星星
+        String temp2 = replaceInsulin(temp1);
+        return temp2;
     }
 
+    public static String transLabtest(String name) {
+        name = sbc2dbc(name).toUpperCase();
+        String temp1 = removeEt(name);
+        return temp1;
+    }
+
+    /**
+     * 射频消融术 -> 射频消融术
+     */
+    private static String oper1(String name) {
+        String reg = "射频消融";
+        Pattern pattern = Pattern.compile(reg);
+        Matcher matcher = pattern.matcher(name);
+        if (matcher.find()) {
+            return "射频消融术";
+        }
+        return name;
+    }
+
+    /**
+     * 心脏起搏器
+     */
+    private static String oper2(String name) {
+        String reg = "起搏器[植置]入";
+        Pattern pattern = Pattern.compile(reg);
+        Matcher matcher = pattern.matcher(name);
+        if (matcher.find()) {
+            return "心脏起搏器植入";
+        }
+        return name;
+    }
+
+    /**
+     * 冠脉旁路移植手术
+     */
+    private static String oper3(String name) {
+        String reg = "冠状动脉旁路移植";
+        Pattern pattern = Pattern.compile(reg);
+        Matcher matcher = pattern.matcher(name);
+        if (matcher.find()) {
+            return "冠脉旁路移植手术";
+        }
+        return name;
+    }
+
+    /**
+     * 主动脉瓣置换术
+     */
+    private static String oper4(String name) {
+        String reg = "主动脉瓣置换";
+        Pattern pattern = Pattern.compile(reg);
+        Matcher matcher = pattern.matcher(name);
+        if (matcher.find()) {
+            return "主动脉瓣置换术";
+        }
+        return name;
+    }
+
+    /**
+     * 冠状动脉造影
+     */
+    private static String oper5(String name) {
+        String reg = "冠脉造影|冠状动脉造影";
+        Pattern pattern = Pattern.compile(reg);
+        Matcher matcher = pattern.matcher(name);
+        if (matcher.find()) {
+            return "冠脉造影";
+        }
+        return name;
+    }
+
+    private static String oper6(String name) {
+        String reg1 = "三尖瓣成形";
+        Pattern pattern1 = Pattern.compile(reg1);
+        Matcher matcher1 = pattern1.matcher(name);
+        if (matcher1.find()) {
+            return "三尖瓣成形术";
+        }
+
+        String reg2 = "二尖瓣成形";
+        Pattern pattern2 = Pattern.compile(reg2);
+        Matcher matcher2 = pattern2.matcher(name);
+        if (matcher2.find()) {
+            return "二尖瓣成形术";
+        }
+
+        String reg3 = "肾动脉造影";
+        Pattern pattern3 = Pattern.compile(reg3);
+        Matcher matcher3 = pattern3.matcher(name);
+        if (matcher3.find()) {
+            return "肾动脉造影术";
+        }
+
+        String reg4 = "室间隔缺损修补";
+        Pattern pattern4 = Pattern.compile(reg4);
+        Matcher matcher4 = pattern4.matcher(name);
+        if (matcher4.find()) {
+            return "室间隔缺损修补术";
+        }
+
+        String reg5 = "心脏电生理检查";
+        Pattern pattern5 = Pattern.compile(reg5);
+        Matcher matcher5 = pattern5.matcher(name);
+        if (matcher5.find()) {
+            return "心脏电生理检查术";
+        }
+
+        String reg6 = "主动脉气囊";
+        Pattern pattern6 = Pattern.compile(reg6);
+        Matcher matcher6 = pattern6.matcher(name);
+        if (matcher6.find()) {
+            return "主动脉气囊反搏治疗";
+        }
+
+        String reg7 = "主动脉球囊";
+        Pattern pattern7 = Pattern.compile(reg7);
+        Matcher matcher7 = pattern7.matcher(name);
+        if (matcher7.find()) {
+            return "主动脉球囊治疗";
+        }
+
+        return name;
+    }
+
+    public static String[] transOper(String name) {
+        name = sbc2dbc(name).toUpperCase(); // 全角 --> 半角，全大写
+        String[] separate = name.split("[+\\uff0b=、并和及.]");
+        for (int i=0; i<separate.length; i++) {
+            separate[i] = oper1(separate[i]);
+            separate[i] = oper2(separate[i]);
+            separate[i] = oper3(separate[i]);
+            separate[i] = oper4(separate[i]);
+            separate[i] = oper5(separate[i]);
+            separate[i] = oper6(separate[i]);
+        }
+        return separate;
+    }
 
     public static void main(String[] args) {
-        String temp1 = "ABO血型反定型(A.B抗原)国产";
-        String temp2 = "AB型RH(D )阳性新鲜冰冻血浆";
-        String temp3 = "B型钠尿酸肽";
+        String s = "左室造影=左心导管检查";
+        String[] ss = transOper(s);
 
-        System.out.println(replaceTransfusion(temp1));
-        System.out.println(replaceTransfusion(temp2));
-        System.out.println(replaceTransfusion(temp3));
+        for (String i : ss ) {
+            System.out.println(i);
+        }
     }
 
 

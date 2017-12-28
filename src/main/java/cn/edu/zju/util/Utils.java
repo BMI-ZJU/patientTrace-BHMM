@@ -1,6 +1,12 @@
 package cn.edu.zju.util;
 
+import com.csvreader.CsvReader;
+import com.csvreader.CsvWriter;
+
 import java.io.*;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Utils {
 
@@ -88,10 +94,32 @@ public class Utils {
         return new String(c);
     }
 
-    public static void main(String[] args) {
-        String o = "1：2";
-        System.out.println(sbc2dbc(o));
-        System.out.println(dbc2sbc(o));
+    /**
+     * 去除词典中的每行后面多余的,,,,,,,
+     */
+    public static void removeRedundantComma(String filePath) throws IOException {
+        File file = new File(filePath);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "GBK"));
+        List<String> content = new ArrayList<>();
+        String s = null;
+        while ((s = reader.readLine()) != null) {
+            content.add(s.replaceAll(",+$", ""));
+        }
+
+        reader.close();
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        for (String sw : content) {
+            writer.write(sw);
+            writer.newLine();
+        }
+        writer.flush();
+        writer.close();
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        removeRedundantComma("resources/save/处方词典.csv");
     }
 
 }
