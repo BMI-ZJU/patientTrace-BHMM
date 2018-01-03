@@ -1,12 +1,17 @@
 package cn.edu.zju.util;
 
+import javax.rmi.CORBA.Util;
+import java.io.IOException;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static cn.edu.zju.util.Utils.sbc2dbc;
 
 public class Rules {
-    public static final String pattern = "&|[\\uFE30-\\uFFA0]|‘’|“”";
+    private static Map<String, String> prescDict = Utils.loadDict("resources/save/处方词典.csv");
+    private static Map<String, String> labtestDict = Utils.loadDict("resources/save/检验词典.csv");
+    private static Map<String, String> operDict = Utils.loadDict("resources/save/手术词典.csv");
 
     // 舍弃该方法，以全角转半角符号代替该方法
 //    /**
@@ -65,13 +70,13 @@ public class Rules {
         name = sbc2dbc(name).toUpperCase(); // 全角 --> 半角，全大写
         String temp1 = removeStar(name); // 去除星星
         String temp2 = replaceInsulin(temp1);
-        return temp2;
+        return prescDict.get(temp2);
     }
 
     public static String transLabtest(String name) {
         name = sbc2dbc(name).toUpperCase();
         String temp1 = removeEt(name);
-        return temp1;
+        return labtestDict.get(temp1);
     }
 
     /**
@@ -91,7 +96,7 @@ public class Rules {
      * 心脏起搏器
      */
     private static String oper2(String name) {
-        String reg = "起搏器[植置]入";
+        String reg = "起[搏博]器[植置]入";
         Pattern pattern = Pattern.compile(reg);
         Matcher matcher = pattern.matcher(name);
         if (matcher.find()) {
@@ -130,7 +135,7 @@ public class Rules {
      * 冠状动脉造影
      */
     private static String oper5(String name) {
-        String reg = "冠脉造影|冠状动脉造影";
+        String reg = "冠造|冠脉造影|冠状动脉.*造影";
         Pattern pattern = Pattern.compile(reg);
         Matcher matcher = pattern.matcher(name);
         if (matcher.find()) {
@@ -189,6 +194,62 @@ public class Rules {
             return "主动脉球囊治疗";
         }
 
+        String reg8 = "房间隔缺损修补";
+        Pattern pattern8 = Pattern.compile(reg8);
+        Matcher matcher8 = pattern8.matcher(name);
+        if (matcher8.find()) {
+            return "房间隔缺损修补术";
+        }
+
+        String reg9 = "三尖瓣置换";
+        Pattern pattern9 = Pattern.compile(reg9);
+        Matcher matcher9 = pattern9.matcher(name);
+        if (matcher9.find()) {
+            return "三尖瓣置换术";
+        }
+
+        String reg10 = "二尖瓣置换";
+        Pattern pattern10 = Pattern.compile(reg10);
+        Matcher matcher10 = pattern10.matcher(name);
+        if (matcher10.find()) {
+            return "二尖瓣置换术";
+        }
+
+        String reg11 = "腹股动脉造影";
+        Pattern pattern11 = Pattern.compile(reg11);
+        Matcher matcher11 = pattern11.matcher(name);
+        if (matcher11.find()) {
+            return "腹股动脉造影";
+        }
+
+        String reg12 = "除[颤颠]器.*安[置植]|除颤器.*植入";
+        Pattern pattern12 = Pattern.compile(reg12);
+        Matcher matcher12 = pattern12.matcher(name);
+        if (matcher12.find()) {
+            return "心脏除颤器植入术";
+        }
+
+        String reg13 = "除颤器.*置换";
+        Pattern pattern13 = Pattern.compile(reg13);
+        Matcher matcher13 = pattern13.matcher(name);
+        if (matcher13.find()) {
+            return "心脏除颤器置换术";
+        }
+
+        String reg14 = "起[搏博]器更换|起[搏博]器置换";
+        Pattern pattern14 = Pattern.compile(reg14);
+        Matcher matcher14 = pattern14.matcher(name);
+        if (matcher14.find()) {
+            return "心脏起搏器置换术";
+        }
+
+        String reg15 = "临时.*起搏";
+        Pattern pattern15 = Pattern.compile(reg15);
+        Matcher matcher15 = pattern15.matcher(name);
+        if (matcher15.find()) {
+            return "心脏临时起搏";
+        }
+
         return name;
     }
 
@@ -202,12 +263,14 @@ public class Rules {
             separate[i] = oper4(separate[i]);
             separate[i] = oper5(separate[i]);
             separate[i] = oper6(separate[i]);
+            separate[i] = separate[i].replaceAll("^\\s", "");
+            separate[i] = operDict.get(separate[i]);
         }
         return separate;
     }
 
     public static void main(String[] args) {
-        String s = "左室造影=左心导管检查";
+        String s = "单腔永久起博器植入术";
         String[] ss = transOper(s);
 
         for (String i : ss ) {

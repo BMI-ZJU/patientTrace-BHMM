@@ -85,51 +85,50 @@ public class DataTrans {
         int elements = 0;
 
         // 处理处方
-//        List<Element> prescs = root.element("presces").elements();
-//        for (Element e : prescs) {
-//            String name = e.attributeValue("name");
-//
-//            if (isMatchOperation(name)) continue; // 如果医嘱中的是手术信息，则丢弃，以手术记录表中的为准
-//            name = transName(name);
-//            if (!rowName.containsKey(name)) {
-//                rowName.put(name, elements);
-//                elements ++;
-//            }
-//        }
+        List<Element> prescs = root.element("presces").elements();
+        for (Element e : prescs) {
+            String name = e.attributeValue("name");
+
+            name = transName(name);
+            if (!rowName.containsKey(name)) {
+                rowName.put(name, elements);
+                elements ++;
+            }
+        }
 
         // 处理检验信息
-//        List<Element> labtests = root.element("labtests").elements();
-//        for (Element e : labtests) {
-//            String time = e.attributeValue("time");
-//            if (calHospitalizedDays(admissionTime, time) < 0 || calHospitalizedDays(dischargeTime, time) > 1) {
-//                continue;
-//            }
-//
-//            String name = e.attributeValue("name");
-//
-//            if (name == null) continue;
-//            name = transLabtest(name);
-//            if (!rowName.containsKey(name)) {
-//                rowName.put(name, elements);
-//                elements ++;
-//            }
-//
-//        }
+        List<Element> labtests = root.element("labtests").elements();
+        for (Element e : labtests) {
+            String time = e.attributeValue("time");
+            if (calHospitalizedDays(admissionTime, time) < 0 || calHospitalizedDays(dischargeTime, time) > 1) {
+                continue;
+            }
+
+            String name = e.attributeValue("name");
+
+            if (name == null) continue;
+            name = transLabtest(name);
+            if (!rowName.containsKey(name)) {
+                rowName.put(name, elements);
+                elements ++;
+            }
+
+        }
 
         // 处理检查信息
-//        List<Element> exams = root.element("exams").elements();
-//        for (Element e : exams) {
-//            String name = e.attributeValue("class");
-//            name = sbc2dbc(name).toUpperCase();
-//            String time = e.attributeValue("time");
-//            if (calHospitalizedDays(admissionTime, time) < 0 || calHospitalizedDays(dischargeTime, time) > 1) {
-//                continue;
-//            }
-//            if (!rowName.containsKey(name)) {
-//                rowName.put(name, elements);
-//                elements++;
-//            }
-//        }
+        List<Element> exams = root.element("exams").elements();
+        for (Element e : exams) {
+            String name = e.attributeValue("class");
+            name = sbc2dbc(name).toUpperCase();
+            String time = e.attributeValue("time");
+            if (calHospitalizedDays(admissionTime, time) < 0 || calHospitalizedDays(dischargeTime, time) > 1) {
+                continue;
+            }
+            if (!rowName.containsKey(name)) {
+                rowName.put(name, elements);
+                elements++;
+            }
+        }
 
         // 有病人的手术记录在出院后，直接丢弃数据
         Element operations = root.element("operations");
@@ -144,7 +143,6 @@ public class DataTrans {
             if (name == null) continue;
             String[] separate = transOper(name);
             for (String item : separate) {
-                item = sbc2dbc(item).toUpperCase();
                 if(!rowName.containsKey(item)) {
                     rowName.put(item, elements);
                     elements ++;
@@ -160,71 +158,71 @@ public class DataTrans {
         int hospitalizedDays = calHospitalizedDays(admissionTime, dischargeTime);
 
         // 检验信息的处理
-//        List<Element> labtests = root.element("labtests").elements();
-//        for (Element labtest: labtests) {
-//            String name = labtest.attributeValue("name");
-//            if (name == null) continue;
-//            name = transLabtest(name);
-//            String date = labtest.attributeValue("time");
-//
-//            int column = calHospitalizedDays(admissionTime, date) - 1;
-//            if (column < 0 || calHospitalizedDays(dischargeTime, date) > 1) continue;
-//            int row = rowName.get(name);
-//            content[row][column] += 1;
-//        }
+        List<Element> labtests = root.element("labtests").elements();
+        for (Element labtest: labtests) {
+            String name = labtest.attributeValue("name");
+            if (name == null) continue;
+            name = transLabtest(name);
+            String date = labtest.attributeValue("time");
+
+            int column = calHospitalizedDays(admissionTime, date) - 1;
+            if (column < 0 || calHospitalizedDays(dischargeTime, date) > 1) continue;
+            int row = rowName.get(name);
+            content[row][column] += 1;
+        }
 
         // 检查信息的处理
-//        List<Element> exams = root.element("exams").elements();
-//        for (Element exam: exams) {
-//            String name = exam.attributeValue("class");
-//            name = transName(name);
-//            String date = exam.attributeValue("time");
-//
-//            int column = calHospitalizedDays(admissionTime, date) - 1;
-//            if (column < 0 || calHospitalizedDays(dischargeTime, date) > 1) continue;
-//            int row = rowName.get(name);
-//            content[row][column] += 1;
-//        }
+        List<Element> exams = root.element("exams").elements();
+        for (Element exam: exams) {
+            String name = exam.attributeValue("class");
+            name = sbc2dbc(name).toUpperCase();
+            String date = exam.attributeValue("time");
+
+            int column = calHospitalizedDays(admissionTime, date) - 1;
+            if (column < 0 || calHospitalizedDays(dischargeTime, date) > 1) continue;
+            int row = rowName.get(name);
+            content[row][column] += 1;
+        }
 
         //  处方信息的处理。需要注意的有该处方只有第一天开了，但有一定的量，之后每天都需要填入，同时不应超过出院的日子。
-//        List<Element> presces = root.element("presces").elements();
-//        for (Element presc : presces) {
-//            String name = presc.attributeValue("name");
-//            name = transName(name);
-//            String date = presc.attributeValue("date");
-//
-//            int row = rowName.get(name);
-//            int column = calHospitalizedDays(admissionTime, date) - 1;
-//            if (presc.attribute("dosage") != null) {
-//                double dosage = Double.parseDouble(presc.attributeValue("dosage"));
-//                double quantity = Double.parseDouble(presc.attributeValue("quantity"));
-//                String frequency = null;
-//                if(presc.attribute("frequency") != null) {
-//                    frequency = presc.attributeValue("frequency");
-//                    if (frequency.replaceAll("\\D+", "").equals("")) {
-//                        if (column >= content[0].length || column < 0) continue;
-//                        content[row][column] += dosage;
-//                    } else {
-//                        double freq = Double.parseDouble(frequency.replaceAll("\\D+", ""));
-//                        int continuedDays = (int) Math.ceil(quantity / (dosage * freq));
-//                        int endDay = column + continuedDays - 1; // 处方结束日期
-//
-//                        if (endDay + 1 > hospitalizedDays) {  // 处方结束日期不能超过住院日期
-//                            endDay = hospitalizedDays - 1;
-//                        }
-//
-//                        for (int col=column; col <= endDay; col++) {
-//                            content[row][col] += dosage * freq;
-//                        }
-//                    }
-//                } else {
-//                    content[row][column] += 1;
-//                }
-//            } else {
-//                content[row][column] += 1;
-//            }
-//
-//        }
+        List<Element> presces = root.element("presces").elements();
+        for (Element presc : presces) {
+            String name = presc.attributeValue("name");
+            name = transName(name);
+            String date = presc.attributeValue("date");
+
+            int row = rowName.get(name);
+            int column = calHospitalizedDays(admissionTime, date) - 1;
+            if (presc.attribute("dosage") != null) {
+                double dosage = Double.parseDouble(presc.attributeValue("dosage"));
+                double quantity = Double.parseDouble(presc.attributeValue("quantity"));
+                String frequency = null;
+                if(presc.attribute("frequency") != null) {
+                    frequency = presc.attributeValue("frequency");
+                    if (frequency.replaceAll("\\D+", "").equals("")) {
+                        if (column >= content[0].length || column < 0) continue;
+                        content[row][column] += dosage;
+                    } else {
+                        double freq = Double.parseDouble(frequency.replaceAll("\\D+", ""));
+                        int continuedDays = (int) Math.ceil(quantity / (dosage * freq));
+                        int endDay = column + continuedDays - 1; // 处方结束日期
+
+                        if (endDay + 1 > hospitalizedDays) {  // 处方结束日期不能超过住院日期
+                            endDay = hospitalizedDays - 1;
+                        }
+
+                        for (int col=column; col <= endDay; col++) {
+                            content[row][col] += dosage * freq;
+                        }
+                    }
+                } else {
+                    content[row][column] += 1;
+                }
+            } else {
+                content[row][column] += 1;
+            }
+
+        }
 
         // 手术信息的处理。可能没有手术信息
         if (root.element("operations").element("item") == null) {
@@ -242,7 +240,6 @@ public class DataTrans {
             if (name == null) continue;
             String[] separate = transOper(name);
             for (String i : separate) {
-                i = sbc2dbc(i).toUpperCase();
                 int row = rowName.get(i);
                 content[row][column] += 1;
             }

@@ -6,7 +6,9 @@ import com.csvreader.CsvWriter;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Utils {
 
@@ -97,11 +99,11 @@ public class Utils {
     /**
      * 去除词典中的每行后面多余的,,,,,,,
      */
-    public static void removeRedundantComma(String filePath) throws IOException {
+    private static void removeRedundantComma(String filePath) throws IOException {
         File file = new File(filePath);
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "GBK"));
         List<String> content = new ArrayList<>();
-        String s = null;
+        String s;
         while ((s = reader.readLine()) != null) {
             content.add(s.replaceAll(",+$", ""));
         }
@@ -118,8 +120,27 @@ public class Utils {
 
     }
 
+    public static Map<String, String> loadDict(String path){
+        Map<String, String> dict = new HashMap<>();
+        try {
+            CsvReader reader = new CsvReader(path, ',', Charset.forName("utf-8"));
+
+            while (reader.readRecord()) {
+                String[] values = reader.getValues();
+                String value = values[0];
+                for (int i=1; i<values.length; i++) {
+                    dict.put(values[i], value);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return dict;
+    }
+
     public static void main(String[] args) throws IOException {
-        removeRedundantComma("resources/save/处方词典.csv");
+        removeRedundantComma("resources/save/手术词典.csv");
     }
 
 }
