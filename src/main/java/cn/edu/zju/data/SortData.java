@@ -4,10 +4,7 @@ import com.csvreader.CsvReader;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static cn.edu.zju.util.Utils.writeObject;
 
@@ -32,6 +29,7 @@ public class SortData {
         assert files != null;
 
         Map<String, Integer> event2index = new HashMap<>();
+        Map<String, List<Double>> eventIntensity = new HashMap<>();
         List<String> events = new ArrayList<>();
         int eventN = 0;
         for (File file : files) {
@@ -42,22 +40,33 @@ public class SortData {
                 String event = values[0];
                 if (! event2index.containsKey(event)) {
                     event2index.put(event, eventN);
+                    eventIntensity.put(event, new ArrayList<>());
                     events.add(event);
                     eventN++;
+                }
+                List<Double> intensities = eventIntensity.get(event);
+                for (int i=1; i<values.length; i++) {
+                    if (!intensities.contains(Double.parseDouble(values[i]))) {
+                        intensities.add(Double.parseDouble(values[i]));
+                    }
                 }
             }
             reader.close();
         }
 
-        String eventsList = "resources/save/events.csv";
-        String eventsE2I = "resources/save/event2index.model";
+        String eventsList = "resources/save/events.csv"; // event list
+        String eventsE2I = "resources/save/event2index.model"; // Event to index
+        String eventsEI = "resources/save/eventIntensity.model"; // Event intensities
 
         writeObject(eventsE2I, event2index);
+        writeObject(eventsEI, eventIntensity);
         File el = new File(eventsList);
-        el.createNewFile();
         BufferedWriter out = new BufferedWriter(new FileWriter(el));
         for (String e : events) {
-            out.write(e + "\n");
+            List<Double> iten = eventIntensity.get(e);
+            iten.sort(Double::compareTo);
+            String content = iten.stream().map(String::valueOf).reduce(e, (x, y) -> x + "," + y);
+            out.write(content + "\n");
         }
         out.flush();
         out.close();

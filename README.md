@@ -68,6 +68,7 @@ BHMM for treatment event and inpatient journey analysis
 整理数据
 
 - [ ] 列出每一种医嘱，处方，手术所对应的强度列表，对强度过多的某些医嘱，处方，手术进行归一化
+- [ ] 将所有的处方的强度都压缩（归一化）至0,1,2,3,4,5中
 
 模型
 

@@ -1,7 +1,5 @@
 package cn.edu.zju.util;
 
-import javax.rmi.CORBA.Util;
-import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -248,6 +246,13 @@ public class Rules {
         Matcher matcher15 = pattern15.matcher(name);
         if (matcher15.find()) {
             return "心脏临时起搏";
+        }
+
+        String reg16 = "药敏";
+        Pattern pattern16 = Pattern.compile(reg16);
+        Matcher matcher16 = pattern16.matcher(name);
+        if (matcher16.find()) {
+            return "药敏";
         }
 
         return name;

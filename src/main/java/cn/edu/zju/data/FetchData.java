@@ -239,8 +239,8 @@ public class FetchData {
 
         PreparedStatement prescMasterStatement = null;
         ResultSet prescMasterSet = null;
-        PreparedStatement prescDetailStatement = null;
-        ResultSet prescDetailSet = null;
+        PreparedStatement prescDetailStatement;
+        ResultSet prescDetailSet;
 
         try{
             // 处方信息的处理
