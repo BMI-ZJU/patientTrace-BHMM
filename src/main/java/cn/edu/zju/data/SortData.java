@@ -1,5 +1,8 @@
 package cn.edu.zju.data;
 
+import cn.edu.zju.util.CategoryScaler;
+import cn.edu.zju.util.LinearScaler;
+import cn.edu.zju.util.Scaler;
 import com.csvreader.CsvReader;
 
 import java.io.*;
@@ -62,12 +65,24 @@ public class SortData {
         writeObject(eventsEI, eventIntensity);
         File el = new File(eventsList);
         BufferedWriter out = new BufferedWriter(new FileWriter(el));
+        Map<String, Scaler> eventScaler = new HashMap<>();
         for (String e : events) {
             List<Double> iten = eventIntensity.get(e);
             iten.sort(Double::compareTo);
+            if (iten.size() <= 6) {
+                Map<Double, Integer> valueDict = new HashMap<>();
+                for (int i = 0; i < iten.size(); i++) {
+                    valueDict.put(iten.get(i), i);
+                }
+                eventScaler.put(e, new CategoryScaler(valueDict));
+            } else {
+                double max = iten.get(iten.size() - 1);
+                eventScaler.put(e, new LinearScaler(max));
+            }
             String content = iten.stream().map(String::valueOf).reduce(e, (x, y) -> x + "," + y);
             out.write(content + "\n");
         }
+        writeObject("resources/save/eventScaler.model", eventScaler);
         out.flush();
         out.close();
     }
