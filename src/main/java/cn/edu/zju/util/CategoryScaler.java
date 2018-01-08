@@ -12,6 +12,6 @@ public class CategoryScaler implements Scaler, Serializable{
 
     @Override
     public int scale(double value) {
-        return valueDict.get(value);
+        return valueDict.get(value) - 1;
     }
 }

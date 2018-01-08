@@ -32,6 +32,36 @@ public class Utils {
         }
     }
 
+    public static String[][] readPatientRecord(String path) throws IOException {
+        CsvReader reader = new CsvReader(path);
+        List<String[]> lines = new ArrayList<>();
+
+        while (reader.readRecord()) {
+            lines.add(reader.getValues());
+        }
+
+        String[][] content = new String[0][];
+        content = lines.toArray(content);
+        content = transposition(content);
+        return content;
+    }
+
+    private static String[][] transposition(String[][] origin){
+        int row = origin.length;
+        int column = origin[0].length;
+
+        String[][] result = new String[column][row];
+        for (int i=0; i<row; i++) {
+            for (int j=0; j<column; j++) {
+                result[j][i] = origin[i][j];
+            }
+        }
+
+        return result;
+    }
+
+
+    //字符转换
     private static final char SBC_SPACE = 12288; // 全角空格
     private static final char DBC_SPACE = 32;  // 半角空格
     private static final char ASCII_START = 33;
@@ -140,7 +170,6 @@ public class Utils {
     }
 
     public static void main(String[] args) throws IOException {
-        removeRedundantComma("resources/save/手术词典.csv");
     }
 
 }

@@ -11,6 +11,6 @@ public class LinearScaler implements Scaler, Serializable{
 
     @Override
     public int scale(double value) {
-        return (int) Math.ceil(value / max * 5);
+        return (int) Math.ceil(value / max * 5) - 1;
     }
 }
