@@ -5,4 +5,5 @@ package cn.edu.zju.util;
  */
 public interface Scaler {
     int scale(double value);
+    int getV();
 }

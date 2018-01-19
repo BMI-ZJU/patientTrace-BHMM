@@ -33,7 +33,7 @@ public class Utils {
     }
 
     public static String[][] readPatientRecord(String path) throws IOException {
-        CsvReader reader = new CsvReader(path);
+        CsvReader reader = new CsvReader(path, ',', Charset.forName("GBK"));
         List<String[]> lines = new ArrayList<>();
 
         while (reader.readRecord()) {
@@ -59,7 +59,6 @@ public class Utils {
 
         return result;
     }
-
 
     //字符转换
     private static final char SBC_SPACE = 12288; // 全角空格
@@ -170,6 +169,20 @@ public class Utils {
     }
 
     public static void main(String[] args) throws IOException {
+        double[] p = {0.1, 0.2, 0.3, 0.4};
+
+        int newT = 0;
+        for (int j=0; j<50; j++) {
+            for (int i = 0; i < 50; i++) {
+                double u = Math.random() * 0.4;
+                for (newT = 0; newT < p.length; newT++) {
+                    if (u < p[newT]) {
+                        break;
+                    }
+                }
+                System.out.print(newT + " ");
+            }
+        }
     }
 
 }

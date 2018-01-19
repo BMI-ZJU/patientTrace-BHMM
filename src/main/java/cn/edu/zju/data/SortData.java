@@ -87,8 +87,6 @@ public class SortData {
         out.close();
     }
 
-    // TODO: 一些医嘱的归一化
-
     public static void main(String[] args) throws IOException {
         listAll();
     }
