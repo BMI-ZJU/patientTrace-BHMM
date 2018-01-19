@@ -5,12 +5,12 @@ import cn.edu.zju.util.Scaler;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static cn.edu.zju.util.Utils.readObject;
-import static cn.edu.zju.util.Utils.readPatientRecord;
-import static cn.edu.zju.util.Utils.writeObject;
+import static cn.edu.zju.util.Utils.*;
 
 public class BHMM implements Serializable{
 
@@ -46,9 +46,9 @@ public class BHMM implements Serializable{
     public BHMM() {
         this.k = 10;
         this.iterations = 10;
-        this.alpha = 1 / k;
-        this.beta = 1;
-        this.gamma = 1;
+        this.alpha = 1.0f / k;
+        this.beta = 1f;
+        this.gamma = 1f;
     }
 
     /**
@@ -259,6 +259,43 @@ public class BHMM implements Serializable{
 
     }
 
+    public List<Integer> inferOne(String path) throws IOException {
+        List<Integer> result = new ArrayList<>();
+        int lastTopic = -1;
+        int currentTopic;
+        String[][] content = readPatientRecord(path);
+        String[] interventions = content[0];
+        Map<Integer, Integer> eAndv = new HashMap<>();
+        for (int i=1; i<content.length; i++) {
+            String[] oneDay = content[i];
+            for (int j=1; j<oneDay.length; j++) {
+                String e = interventions[j];
+                String v = oneDay[j];
+                int intensity = eventScaler.get(e).scale(Double.parseDouble(v));
+                if (intensity < 0) continue;
+                eAndv.put(event2index.get(e), intensity);
+            }
+
+            double p[] = new double[this.k];
+            for (int k=0; k<this.k; k++) {
+                if (lastTopic == -1) {
+                    p[k] = 0.1;
+                }else {
+                    p[k] = theta[lastTopic][k];
+                }
+                for (Map.Entry<Integer, Integer> ev : eAndv.entrySet()) {
+                    p[k] = p[k] * phi[k][ev.getKey()] * omega[k][ev.getKey()][ev.getValue()];
+                }
+            }
+
+            currentTopic = maxIndex(p);
+            result.add(currentTopic);
+            lastTopic = currentTopic;
+        }
+
+        return result;
+    }
+
     public void saveModel() {
         saveModel("resources/save/bhmm.model");
     }
@@ -272,7 +309,7 @@ public class BHMM implements Serializable{
     }
 
     public static void main(String[] args) throws IOException {
-        BHMM bhmm = new BHMM(10, 50, 0.1f, 1, 1);
+        BHMM bhmm = new BHMM(10, 50, 0.1f, 1f, 1f);
         System.out.println("Initialize model");
         bhmm.initializeModel("resources/patientCSV");
         bhmm.saveModel("resources/save/initializedModel.model");

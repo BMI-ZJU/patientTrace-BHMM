@@ -168,6 +168,18 @@ public class Utils {
         return dict;
     }
 
+    public static int maxIndex(double[] a) {
+        double max = Double.MIN_VALUE;
+        int max_i = 0;
+        for (int i=0; i<a.length; i++) {
+            if (max < a[i]) {
+                max = a[i];
+                max_i = i;
+            }
+        }
+        return max_i;
+    }
+
     public static void main(String[] args) throws IOException {
         double[] p = {0.1, 0.2, 0.3, 0.4};
 
