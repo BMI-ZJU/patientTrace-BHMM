@@ -334,7 +334,8 @@ public class BHMM implements Serializable{
 
     public static void main(String[] args) throws IOException {
         // 训练模型
-        BHMM bhmm = new BHMM(10, 1000, 10f, 0.1f, 0.1f);
+        int k = 35;
+        BHMM bhmm = new BHMM(k, 1000, 10f, 0.1f, 0.1f);
         System.out.println("Initialize model");
         bhmm.initializeModel("resources/patientCSV");
         bhmm.saveModel("resources/save/initializedModel.model");
@@ -343,7 +344,7 @@ public class BHMM implements Serializable{
         System.out.println("update parameters");
         bhmm.calEstimateParameters();
         System.out.println("Save model");
-        bhmm.saveModel("resources/save/bhmm_15_topic.model");
+        bhmm.saveModel("resources/save/bhmm_" + k + "_topic.model");
 
 
 

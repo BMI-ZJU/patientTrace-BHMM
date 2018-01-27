@@ -12,15 +12,16 @@ public class LDA {
 
     int k;
     int A;
+    int M;
     int iterations;
     float alpha;
     float beta;
 
     int[][] zt; // N * T, N为所有记录的条数，T为记录的天数（可变）
     int[][] nkt; // 每个主题的事件
-    int[]   nktSum;  // sum for each row in za
-    int[][] nmk;
-    int[]   nmkSum;
+    int[]   nktSum;  // sum for each row in nkt
+    int[][] nmk; // 每天的主题分布
+    int[]   nmkSum;  // sum for each row in nmk
 
     double[][] phi;
     double[][] theta;
