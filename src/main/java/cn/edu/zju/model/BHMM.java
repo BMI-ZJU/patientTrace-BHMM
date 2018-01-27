@@ -125,16 +125,14 @@ public class BHMM implements Serializable{
     }
 
     public void inferenceModel(String rootPath) throws IOException {
-        File root = new File(rootPath);
-        File[] files = root.listFiles();
-        assert files != null;
+        String[][][] dataSet = loadDataSet(rootPath);
 
         Map<Integer, Integer> eAndv = new HashMap<>();
 
         for (int i=0; i<this.iterations; i++) {
 
-            for (int j=0; j<files.length; j++) {
-                String[][] content = readPatientRecord(files[j].getPath());
+            for (int j=0; j<dataSet.length; j++) {
+                String[][] content = dataSet[j];
                 String[] interventions = content[0];
                 int lastTopic = -1;
                 int currentTopic;
@@ -358,40 +356,6 @@ public class BHMM implements Serializable{
 //            System.out.print(i + " ");
 //        }
 
-//        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_15_topic.model");
-//        assert bhmm != null;
-//
-//        double[][] phi = bhmm.getPhi();
-//        double[][][] omega = bhmm.getOmega();
-//        int[][] zt = bhmm.zt;
-//
-//        double exponential = 0;
-//        int num_event = 0;
-//
-//        File root = new File("resources/patientCSV");
-//        File[] files = root.listFiles();
-//        assert files != null;
-//
-//        for (int i=0; i<zt.length; i++) {
-//            String[][] content = readPatientRecord(files[i].getPath());
-//            String[] intervention = content[0];
-//            int[] trace = zt[i];
-//            for (int j=0; j<trace.length; j++) {
-//                String[] oneDay = content[j+1];
-//                int topic = trace[j];
-//                for (int k=1; k<oneDay.length; k++) {
-//                    String event = intervention[k];
-//                    Scaler scaler = bhmm.eventScaler.get(event);
-//                    String v = oneDay[k];
-//                    int intensity = scaler.scale(Double.parseDouble(v));
-//                    if (intensity < 0) continue;
-//                    num_event++;
-//                    exponential += Math.log(phi[topic][bhmm.event2index.get(event)] * omega[topic][bhmm.event2index.get(event)][intensity]);
-//                }
-//            }
-//        }
-//
-//        System.out.println(Math.exp(- exponential / num_event));
 
     }
 }

@@ -1,8 +1,10 @@
 package cn.edu.zju.model;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
+import static cn.edu.zju.util.Utils.loadDataSet;
 import static cn.edu.zju.util.Utils.readObject;
 import static cn.edu.zju.util.Utils.writeObject;
 
@@ -15,7 +17,10 @@ public class LDA {
     float beta;
 
     int[][] zt; // N * T, N为所有记录的条数，T为记录的天数（可变）
-    int[][] za; // 每个主题的事件
+    int[][] nkt; // 每个主题的事件
+    int[]   nktSum;  // sum for each row in za
+    int[][] nmk;
+    int[]   nmkSum;
 
     double[][] phi;
     double[][] theta;
@@ -36,10 +41,12 @@ public class LDA {
         this.beta = beta;
     }
 
-    public void initializeModel(String rootPath) {
+    public void initializeModel(String rootPath) throws IOException {
         File root = new File(rootPath);
         File[] files = root.listFiles();
         assert files != null;
+
+        String[][][] allRecords = loadDataSet(rootPath);
 
         event2Index = (Map<String, Integer>) readObject("resources/save/event2index.model");
         assert event2Index != null;

@@ -167,6 +167,21 @@ public class Utils {
         return dict;
     }
 
+    public static String[][][] loadDataSet(String rootPath) throws IOException {
+        File root = new File(rootPath);
+        File[] files = root.listFiles();
+        assert files != null;
+
+        String[][][] result = new String[files.length][][];
+
+        for (int i=0; i<files.length; i++) {
+            result[i] = readPatientRecord(files[i].getPath());
+        }
+
+        return result;
+    }
+
+
     public static int maxIndex(double[] a) {
         double max = Double.MIN_VALUE;
         int max_i = 0;
@@ -195,9 +210,8 @@ public class Utils {
     }
 
     public static void main(String[] args) throws IOException {
-        Map<String, Integer> event2Index = (Map) readObject("resources/save/event2index.model");
-        assert event2Index != null;
-        System.out.println(event2Index.size());
+        int[] a = new int[0];
+        System.out.println(a.length);
     }
 
 }

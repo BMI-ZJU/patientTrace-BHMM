@@ -96,12 +96,12 @@ public class Analysis {
     }
 
     public static double perplexity() throws IOException {
-        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_3_topic.model");
+        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_20_topic.model");
         assert bhmm != null;
 
         double[][] phi = bhmm.getPhi();
         double[][][] omega = bhmm.getOmega();
-        int[][] zt = new int[123][9];  // 这段代码需要放到BHMM类的main函数中运行，因为bhmm中的zt是私有变量，同时这段改为int[][] zt = bhmm.zt;
+        int[][] zt = bhmm.getZT();  // 这段代码需要放到BHMM类的main函数中运行，因为bhmm中的zt是私有变量，同时这段改为int[][] zt = bhmm.zt;
 
         double exponential = 0;
         int num_event = 0;
@@ -133,6 +133,6 @@ public class Analysis {
     }
 
     public static void main(String[] args) throws IOException {
-        analysisParam();
+        System.out.println(perplexity());
     }
 }
