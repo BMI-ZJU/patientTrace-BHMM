@@ -1,14 +1,13 @@
 package cn.edu.zju.util;
 
 import com.csvreader.CsvReader;
-import com.csvreader.CsvWriter;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Utils {
 
@@ -180,21 +179,25 @@ public class Utils {
         return max_i;
     }
 
-    public static void main(String[] args) throws IOException {
-        double[] p = {0.1, 0.2, 0.3, 0.4};
-
-        int newT = 0;
-        for (int j=0; j<50; j++) {
-            for (int i = 0; i < 50; i++) {
-                double u = Math.random() * 0.4;
-                for (newT = 0; newT < p.length; newT++) {
-                    if (u < p[newT]) {
-                        break;
-                    }
-                }
-                System.out.print(newT + " ");
-            }
+    public static Integer[] argsort(double[] array) {
+        int length = array.length;
+        int[] indexes = new int[length];
+        for (int i=0; i<length; i++) {
+            indexes[i] = i;
         }
+
+        return IntStream.range(0, length)
+                .boxed()
+                .map(x -> new SimpleEntry<>(indexes[x], array[x]))
+                .sorted((x, y) -> y.getValue().compareTo(x.getValue()))
+                .map(SimpleEntry::getKey)
+                .toArray(Integer[]::new);
+    }
+
+    public static void main(String[] args) throws IOException {
+        Map<String, Integer> event2Index = (Map) readObject("resources/save/event2index.model");
+        assert event2Index != null;
+        System.out.println(event2Index.size());
     }
 
 }
