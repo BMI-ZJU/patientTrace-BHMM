@@ -72,13 +72,13 @@ BHMM for treatment event and inpatient journey analysis
 
 模型
 
-- [ ] LDA 基础模型
-- [ ] Squence-based Naive Bayes (SNB) 模型
+- [x] LDA 基础模型
+- [x] Squence-based Naive Bayes (SNB) 模型
 - [x] Proposed BHMM 模型
 
 实验
 
-- [ ] 统计多少病人，多少种的event type，总共包含了多少的event，平均在院时长
-- [ ] 训练$k={3,5,7,9,11,13,15}$ 几个模型
-      - [x] k=3,5
+- [x] 统计多少病人，多少种的event type，总共包含了多少的event，平均在院时长
+- [x] 训练$k={3,5,7,9,11,13,15}$ 几个模型
+      - [x] k=3,5,7,9,10,11,13,15,20,25,30,35
 - [ ] ​

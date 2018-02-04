@@ -6,7 +6,6 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Utils {
@@ -209,9 +208,53 @@ public class Utils {
                 .toArray(Integer[]::new);
     }
 
+    // 将patientCSV中的文件名和索引对应起来
+    public static void generateFileToIndex() {
+        File root = new File("resources/patientCSV");
+        File[] files = root.listFiles();
+        assert files != null;
+
+        Map<String, Integer> file2index = new HashMap<>();
+
+        for (File file : files) {
+            file2index.put(file.getName(), file2index.size());
+        }
+
+        writeObject("resources/save/file2index.model", file2index);
+    }
+
+    public static double[] sumColumn(double[][] array) {
+        int row = array.length;
+        int column = array[0].length;
+
+        double[] result = new double[column];
+
+        for (int i=0; i<row; i++) {
+            for (int j=0; j<column; j++) {
+                result[j] += array[i][j];
+            }
+        }
+
+        return result;
+    }
+
+    public static double[] sumRow(double[][] array) {
+        int row = array.length;
+        int column = array[0].length;
+
+        double[] result = new double[row];
+
+        for (int i=0; i<row; i++) {
+            for (int j=0; j<column; j++) {
+                result[i] += array[i][j];
+            }
+        }
+
+        return result;
+    }
+
     public static void main(String[] args) throws IOException {
-        int[] a = new int[0];
-        System.out.println(a.length);
+        generateFileToIndex();
     }
 
 }

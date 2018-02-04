@@ -1,17 +1,17 @@
 package cn.edu.zju.model;
 
-import cn.edu.zju.model.BHMM;
 import cn.edu.zju.util.Scaler;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import static cn.edu.zju.util.Utils.argsort;
-import static cn.edu.zju.util.Utils.readObject;
-import static cn.edu.zju.util.Utils.readPatientRecord;
+import static cn.edu.zju.util.Utils.*;
 
 public class Analysis {
 
@@ -34,7 +34,6 @@ public class Analysis {
         for (File file : files) {
             boolean everyDay = true; // 是否每天都有Intervention
             String[][] content = readPatientRecord(file.getPath());
-            String[] interventions = content[0];
 
             los += content.length - 1;
 
@@ -68,9 +67,7 @@ public class Analysis {
         System.out.println("所有的干预事件数目" + interventionNum);
     }
 
-    private static void analysisParam() throws IOException {
-
-        int k = 15; // 主题的数量
+    private static void analysisParam(int k) throws IOException {
 
         BHMM bhmm = (BHMM) readObject("resources/save/bhmm_"+ k +"_topic.model");
         assert bhmm != null;
@@ -95,8 +92,8 @@ public class Analysis {
 
     }
 
-    public static double perplexity() throws IOException {
-        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_35_topic.model");
+    public static double perplexity(int topicNum) throws IOException {
+        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_" + topicNum + "_topic.model");
         assert bhmm != null;
 
         double[][] phi = bhmm.getPhi();
@@ -132,7 +129,213 @@ public class Analysis {
         return Math.exp(- exponential / num_event);
     }
 
+    public static void oneHundredExamples() throws IOException {
+        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_15_topic.model");
+//        SNB bhmm = (SNB) readObject("resources/save/snb_15_topic.model");
+        assert bhmm != null;
+        Map<String, Integer> file2index = (Map<String, Integer>) readObject("resources/save/file2index.model");
+        assert file2index != null;
+
+        int[][] zt = bhmm.getZT();
+
+        File[] examples = new File("resources/examples").listFiles();
+        assert examples != null;
+
+        BufferedWriter trainOut = new BufferedWriter(new FileWriter(new File("resources/save/trainResult.txt")));
+        BufferedWriter predOut = new BufferedWriter(new FileWriter(new File("resources/save/predResult.txt")));
+
+        for (File example : examples) {
+
+            trainOut.write(example.getName() + ": \t");
+            for (int t : zt[file2index.get(example.getName())]) {
+                trainOut.write(t + " ");
+            }
+            trainOut.write("\n");
+
+            predOut.write(example.getName() + ": \t");
+            for (int t : bhmm.inferOne(example.getPath())) {
+                predOut.write(t + " ");
+            }
+            predOut.write("\n");
+        }
+
+        trainOut.flush();
+        trainOut.close();
+        predOut.flush();
+        predOut.close();
+
+    }
+
+    public static void oneHundredExamplesLDA() throws IOException {
+        LDA lda = (LDA) readObject("resources/save/lda_15_topic.model");
+        assert lda != null;
+
+        Map<String, Integer> file2index = (Map<String, Integer>) readObject("resources/save/file2index.model");
+        assert file2index != null;
+
+        double[][][] theta = lda.getTheta();
+
+        File[] examples = new File("resources/examples").listFiles();
+        assert examples != null;
+
+        BufferedWriter out = new BufferedWriter(new FileWriter(new File("resources/experiment/LDA_trainResult.csv")));
+
+        for (File example : examples) {
+            int index = file2index.get(example.getName());
+
+            double[][] example_theta = theta[index];
+
+            for (double[] day_theta : example_theta) {
+
+            }
+        }
+
+    }
+
+    public static void los() throws IOException {
+        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_15_topic.model");
+        assert bhmm != null;
+
+        double[] loz = new double[15];
+        double[] loz_numerator = new double[15];
+        double[] loz_denominator = new double[15];
+
+        File root = new File("resources/patientCSV");
+        File[] files = root.listFiles();
+        assert files != null;
+
+        for (File file : files) {
+            List<Integer> zt = bhmm.inferOne(file.getPath());
+            String[][] content = readPatientRecord(file.getPath());
+
+            int los = content.length - 1;
+
+            for (int z : zt) {
+                for (int k=0; k<15; k++) {
+                    if (z == k) {
+                        loz_numerator[k] += los;
+                        loz_denominator[k] += 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (int k=0; k<15; k++) {
+            loz[k] = loz_numerator[k] / loz_denominator[k];
+        }
+
+        BufferedWriter out = new BufferedWriter(new FileWriter(new File("resources/experiment/los.txt")));
+        for (int k=0; k<15; k++) {
+            out.write("los of topic " + k + " is " + loz[k] + "\n");
+        }
+        out.flush();
+        out.close();
+    }
+
+    public static void traceRoute() throws IOException {
+        File root = new File("resources/patientCSV");
+        File[] files = root.listFiles();
+        assert files != null;
+
+        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_15_topic.model");
+        assert bhmm != null;
+
+        List<List<Integer>> zt = new ArrayList<>();
+
+        for (File file : files) {
+            zt.add(bhmm.inferOne(file.getPath()));
+        }
+
+        int total = files.length;
+
+        int days = 40;
+        double[][] k_rate = new double[15][days];
+
+        double[][][] trans = new double[days-1][15][15];
+
+        for (int i=0; i<total; i++) {
+            for (int j=0; j<days; j++) {
+                if (j < zt.get(i).size()) {
+                    k_rate[zt.get(i).get(j)][j]++;
+
+                    if (j < zt.get(i).size() - 1 && j < days-1) {
+                        trans[j][zt.get(i).get(j)][zt.get(i).get(j+1)]++;
+                    }
+                }
+            }
+        }
+
+        double[] columnSum = sumColumn(k_rate);
+
+        for (int i=0; i<15; i++) {
+            for (int j=0; j<days; j++) {
+                k_rate[i][j] /= columnSum[j];
+            }
+        }
+
+        for (int i=0; i<days-1; i++) {
+            double[][] trans_day_k = trans[i];
+            double[] k_trans = sumRow(trans_day_k);
+
+            for (int j=0; j<15; j++) {
+                for (int k=0; k<15; k++) {
+                    trans[i][j][k] /= k_trans[j];
+                }
+            }
+        }
+
+
+        int[] topic_dist = new int[15];
+        for (List<Integer> aZt : zt) {
+            for (int j = 0; j < 15; j++) {
+                if (aZt.contains(j)) {
+                    topic_dist[j]++;
+                }
+            }
+        }
+
+        BufferedWriter out = new BufferedWriter(new FileWriter(new File("resources/experiment/traceRoute.csv")));
+
+        for (int i=0; i<15; i++) {
+            for (int j=0; j<days-1; j++) {
+                out.write(k_rate[i][j] + ",");
+            }
+            out.write(k_rate[i][days-1] + "\n");
+        }
+
+        out.flush();
+        out.close();
+
+        out = new BufferedWriter(new FileWriter(new File("resources/experiment/trans.csv")));
+
+        for (int i=0; i<days-1; i++) {
+
+            for (int j=0; j<15; j++) {
+                for (int k=0; k<15; k++) {
+                    out.write(trans[i][j][k] + ",");
+                }
+                out.write("\n");
+            }
+            out.newLine();
+
+        }
+
+        out.flush();
+        out.close();
+
+        out = new BufferedWriter(new FileWriter(new File("resources/experiment/topic_dist.csv")));
+
+        for (int i=0; i<15; i++) {
+            out.write("topic " + i+1 + ": " + topic_dist[i] + "\n");
+        }
+
+        out.flush();
+        out.close();
+
+    }
+
     public static void main(String[] args) throws IOException {
-        System.out.println(perplexity());
+        traceRoute();
     }
 }

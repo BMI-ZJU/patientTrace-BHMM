@@ -4,6 +4,7 @@ import cn.edu.zju.util.Scaler;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 import static cn.edu.zju.util.Utils.*;
 
-public class SNB {
+public class SNB implements Serializable{
     private int k; // 主题的数量
     private int A; // 干预的种类数
     private int iterations; // 循环的次数
@@ -291,7 +292,7 @@ public class SNB {
 
     public static void main(String[] args) throws IOException {
         // 训练模型
-        int k = 25;
+        int k = 15;
         SNB snb = new SNB(k, 1000, 10f, 0.1f);
         System.out.println("Initialize model");
         snb.initializeModel("resources/patientCSV");

@@ -3,13 +3,14 @@ package cn.edu.zju.model;
 import cn.edu.zju.util.Scaler;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 
 import static cn.edu.zju.util.Utils.loadDataSet;
 import static cn.edu.zju.util.Utils.readObject;
 import static cn.edu.zju.util.Utils.writeObject;
 
-public class LDA {
+public class LDA implements Serializable{
 
     int K;
     int A;
@@ -72,6 +73,8 @@ public class LDA {
             String[] interventions = content[0];
             this.zt[i] = new int[days][interventions.length - 1];
             this.theta[i] = new double[days][K];
+            this.nmk[i] = new int[days][K];
+            this.nmkSum[i] = new int[days];
 
             for (int j=0; j<days; j++){
                 String[] oneDay = content[j+1];
@@ -94,8 +97,8 @@ public class LDA {
         }
     }
 
-    public void inferenceModel() throws IOException {
-        String[][][] allRecords = loadDataSet("resources/patientCSV");
+    public void inferenceModel(String rootPath) throws IOException {
+        String[][][] allRecords = loadDataSet(rootPath);
 
         for (int iter=0; iter < iterations; iter++) {
             for (int i=0; i<M; i++) {
@@ -109,7 +112,7 @@ public class LDA {
                         if (v < 0) continue;
                         int eventIndex = event2Index.get(event);
                         int newTopic = sampleTopic(i, j-1, eventIndex, k-1, v);
-                        zt[i][j][k] = newTopic;
+                        zt[i][j-1][k-1] = newTopic;
                     }
                 }
             }
@@ -191,6 +194,19 @@ public class LDA {
 
     public double[][][] getTheta() {
         return theta;
+    }
+
+    public static void main(String[] args) throws IOException {
+        int k = 15;
+        LDA lda = new LDA(k, 1000, 1f, 0.1f);
+        System.out.println("Initialize model");
+        lda.initializeModel("resources/patientCSV");
+        System.out.println("Inference model");
+        lda.inferenceModel("resources/patientCSV");
+        System.out.println("update parameter");
+        lda.updateParameters();
+        System.out.println("save model");
+        lda.saveModel("resources/save/lda_" + k + "_topics.model");
     }
 
 
