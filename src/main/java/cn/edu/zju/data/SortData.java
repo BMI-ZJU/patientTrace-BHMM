@@ -1,14 +1,13 @@
 package cn.edu.zju.data;
 
-import cn.edu.zju.util.CategoryScaler;
-import cn.edu.zju.util.LinearScaler;
-import cn.edu.zju.util.Scaler;
+import cn.edu.zju.util.*;
 import com.csvreader.CsvReader;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
+import static cn.edu.zju.util.Utils.readObject;
 import static cn.edu.zju.util.Utils.writeObject;
 
 /**
@@ -63,23 +62,25 @@ public class SortData {
 
         writeObject(eventsE2I, event2index);
         writeObject(eventsEI, eventIntensity);
+
         File el = new File(eventsList);
         BufferedWriter out = new BufferedWriter(new FileWriter(el));
         Map<String, Scaler> eventScaler = new HashMap<>();
+
         for (String e : events) {
-            List<Double> iten = eventIntensity.get(e);
-            iten.sort(Double::compareTo);
-            if (iten.size() <= 6) {
+            List<Double> item = eventIntensity.get(e);
+            item.sort(Double::compareTo);
+            if (item.size() <= 6) {
                 Map<Double, Integer> valueDict = new HashMap<>();
-                for (int i = 0; i < iten.size(); i++) {
-                    valueDict.put(iten.get(i), i);
+                for (int i = 0; i < item.size(); i++) {
+                    valueDict.put(item.get(i), i);
                 }
                 eventScaler.put(e, new CategoryScaler(valueDict));
             } else {
-                double max = iten.get(iten.size() - 1);
+                double max = item.get(item.size() - 1);
                 eventScaler.put(e, new LinearScaler(max));
             }
-            String content = iten.stream().map(String::valueOf).reduce(e, (x, y) -> x + "," + y);
+            String content = item.stream().map(String::valueOf).reduce(e, (x, y) -> x + "," + y);
             out.write(content + "\n");
         }
         writeObject("resources/save/eventScaler.model", eventScaler);
@@ -87,7 +88,35 @@ public class SortData {
         out.close();
     }
 
+    public static void reverseScaler() {
+        Map<String, List<Double>> eventIntensity = (Map<String, List<Double>>) readObject("resources/save/eventIntensity.model");
+        assert eventIntensity != null;
+
+        Map<String, ReverseScaler> eventReverseScaler = new HashMap<>();
+
+        for (Map.Entry<String, List<Double>> entry : eventIntensity.entrySet()) {
+            String event = entry.getKey();
+            List<Double> items = entry.getValue();
+            items.sort(Double::compareTo);
+
+            if (items.size() <= 6) {
+                Map<Integer, Double> valueDict = new HashMap<>();
+                for (int i = 0; i < items.size(); i++) {
+                    valueDict.put(i, items.get(i));
+                }
+                eventReverseScaler.put(event, new ReverseCategoryScaler(valueDict));
+
+            } else {
+                double max = items.get(items.size() - 1);
+                eventReverseScaler.put(event, new ReverseLinearScaler(max));
+            }
+        }
+
+        writeObject("resources/save/eventReverseScaler.model", eventReverseScaler);
+    }
+
     public static void main(String[] args) throws IOException {
-        listAll();
+//        listAll();
+        reverseScaler();
     }
 }

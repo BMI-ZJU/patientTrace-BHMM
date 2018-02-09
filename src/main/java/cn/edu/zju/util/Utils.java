@@ -208,6 +208,29 @@ public class Utils {
                 .toArray(Integer[]::new);
     }
 
+    public static String[] argsort(double[][] array) {
+        int row = array.length;
+        List<String> result = new ArrayList<>();
+        List<Double> value = new ArrayList<>();
+
+        for (int i=0; i<row; i++) {
+            for (int j=0; j<array[i].length; j++) {
+                result.add(i + "," + (j+1));
+                value.add(array[i][j]);
+            }
+        }
+
+        int length = result.size();
+
+
+        return IntStream.range(0, length)
+                .boxed()
+                .map(x -> new SimpleEntry<>(result.get(x), value.get(x)))
+                .sorted((x, y) -> y.getValue().compareTo(x.getValue()))
+                .map(SimpleEntry::getKey)
+                .toArray(String[]::new);
+    }
+
     // 将patientCSV中的文件名和索引对应起来
     public static void generateFileToIndex() {
         File root = new File("resources/patientCSV");
@@ -239,8 +262,8 @@ public class Utils {
     }
 
     public static double[] sumRow(double[][] array) {
-        int row = array.length;
         int column = array[0].length;
+        int row = array.length;
 
         double[] result = new double[row];
 

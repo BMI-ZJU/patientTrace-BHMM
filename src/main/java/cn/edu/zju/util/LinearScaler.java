@@ -16,6 +16,6 @@ public class LinearScaler implements Scaler, Serializable{
 
     @Override
     public int getV() {
-        return 6;
+        return 5;
     }
 }

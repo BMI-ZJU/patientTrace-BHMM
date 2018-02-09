@@ -1,12 +1,9 @@
 package cn.edu.zju.model;
 
+import cn.edu.zju.util.ReverseScaler;
 import cn.edu.zju.util.Scaler;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.Array;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +44,7 @@ public class Analysis {
                     interventionNum++;
                     oneDayIntervention++;
                 }
+
                 if (oneDayIntervention == 0) {
                     everyDay = false;
                 }
@@ -67,12 +65,56 @@ public class Analysis {
         System.out.println("所有的干预事件数目" + interventionNum);
     }
 
+    private static void findPCIandCABG() throws IOException {
+        File root = new File("resources/patientCSV");
+        File[] files = root.listFiles();
+        assert files != null;
+
+        BufferedWriter out = new BufferedWriter(new FileWriter(new File("resources/save/pciPatientList.txt")));
+
+        for (File file : files) {
+            boolean pciAndCABG = true;
+            String[][] record = readPatientRecord(file.getPath());
+
+            String[] interventions = record[0];
+
+//            for (String intervention : interventions) {
+//                if (intervention.equals("PCI术")
+//                        || intervention.contains("冠脉球囊")
+//                        || intervention.contains("冠状动脉球囊")
+//                        || intervention.contains("球囊扩张支架植入术")) {
+//                    pciAndCABG = true;
+//                    break;
+//                }
+//                pciAndCABG = false;
+//            }
+//
+//            if (!pciAndCABG) continue;
+
+            for (String intervention : interventions) {
+                if (intervention.equals("冠脉旁路移植手术")) {
+                    pciAndCABG = true;
+                    break;
+                }
+                pciAndCABG = false;
+            }
+
+            if (pciAndCABG) {
+                out.write(file.getPath() + "\n");
+            }
+        }
+
+        out.flush();
+        out.close();
+
+    }
+
     private static void analysisParam(int k) throws IOException {
 
         BHMM bhmm = (BHMM) readObject("resources/save/bhmm_"+ k +"_topic.model");
         assert bhmm != null;
         double[][] phi = bhmm.getPhi();
-        double[][][] omegaa = bhmm.getOmega();
+        double[][][] omega = bhmm.getOmega();
 
         Map<Integer, String> index2Event = (Map) readObject("resources/save/index2Event.model");
         assert index2Event != null;
@@ -87,6 +129,52 @@ public class Analysis {
             }
             out.write("\n");
         }
+        out.flush();
+        out.close();
+
+        out = new BufferedWriter(new FileWriter(new File("resources/save/" + k + "_topic_k_v_to_event.txt")));
+
+        double[][][] actual_probability = new double[k][omega[0].length][];
+
+        for (int i=0; i<k; i++) {
+            for (int j=0; j<omega[0].length; j++) {
+                int V = omega[i][j].length;
+                actual_probability[i][j] = new double[V];
+                for (int v=0; v<V; v++) {
+                    actual_probability[i][j][v] = phi[i][j] * omega[i][j][v];
+                }
+            }
+        }
+
+        Map<String, ReverseScaler> eventReverseScaler = (Map<String, ReverseScaler>) readObject("resources/save/eventReverseScaler.model");
+        Map<String, List<Double>> eventIntensity = (Map<String, List<Double>>) readObject("resources/save/eventIntensity.model");
+        assert eventReverseScaler != null;
+        assert eventIntensity != null;
+
+        for (int i=0; i<k; i++) {
+            double[][] prob = actual_probability[i];
+
+            String[] evArgsort = argsort(prob);
+
+            out.write("主题" + (i+1) + ",");
+
+            for (int j=0; j<30; j++) {
+                String[] ev = evArgsort[j].split(",");
+                int eIndex = Integer.valueOf(ev[0]);
+                String event = index2Event.get(eIndex);
+                int v = Integer.valueOf(ev[1]);
+                List<Double> items = eventIntensity.get(event);
+                if (items.size() <= 6) {
+                    out.write(event + "(" + eventReverseScaler.get(event).scale(v) + "): "+ prob[eIndex][v-1] + ",");
+                } else {
+                    out.write(event + "(" + eventReverseScaler.get(event).scale(v-1) + "-" + eventReverseScaler.get(event).scale(v) + "): " + prob[eIndex][v-1] + ",");
+                }
+
+            }
+
+            out.write("\n");
+        }
+
         out.flush();
         out.close();
 
@@ -130,8 +218,8 @@ public class Analysis {
     }
 
     public static void oneHundredExamples() throws IOException {
-        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_15_topic.model");
-//        SNB bhmm = (SNB) readObject("resources/save/snb_15_topic.model");
+//        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_15_topic.model");
+        SNB bhmm = (SNB) readObject("resources/save/snb_15_topic.model");
         assert bhmm != null;
         Map<String, Integer> file2index = (Map<String, Integer>) readObject("resources/save/file2index.model");
         assert file2index != null;
@@ -166,8 +254,36 @@ public class Analysis {
 
     }
 
+    public static void patientExamples() throws IOException {
+        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_15_topic.model");
+        assert bhmm != null;
+
+        Map<String, Integer> file2index = (Map<String, Integer>) readObject("resources/save/file2index.model");
+        assert file2index != null;
+
+        BufferedReader reader = new BufferedReader(new FileReader(new File("resources/save/pciPatientList.txt")));
+
+        String line = reader.readLine();
+
+        BufferedWriter predOut = new BufferedWriter(new FileWriter(new File("resources/save/pciPredResult.txt")));
+
+        while (line != null) {
+            predOut.write(line + ": \t");
+
+            for (int t : bhmm.inferOne(line)) {
+                predOut.write(t + " ");
+            }
+            predOut.write("\n");
+
+            line = reader.readLine();
+        }
+
+        predOut.flush();
+        predOut.close();
+    }
+
     public static void oneHundredExamplesLDA() throws IOException {
-        LDA lda = (LDA) readObject("resources/save/lda_15_topic.model");
+        LDA lda = (LDA) readObject("resources/save/lda_15_topics.model");
         assert lda != null;
 
         Map<String, Integer> file2index = (Map<String, Integer>) readObject("resources/save/file2index.model");
@@ -184,11 +300,17 @@ public class Analysis {
             int index = file2index.get(example.getName());
 
             double[][] example_theta = theta[index];
+            out.write(example.getName() + ": \t");
 
             for (double[] day_theta : example_theta) {
-
+                out.write(maxIndex(day_theta) + " ");
             }
+
+            out.write("\n");
         }
+
+        out.flush();
+        out.close();
 
     }
 
@@ -233,7 +355,8 @@ public class Analysis {
         out.close();
     }
 
-    public static void traceRoute() throws IOException {
+    private static void traceRoute(double threshold) throws IOException {
+
         File root = new File("resources/patientCSV");
         File[] files = root.listFiles();
         assert files != null;
@@ -250,9 +373,9 @@ public class Analysis {
         int total = files.length;
 
         int days = 40;
-        double[][] k_rate = new double[15][days];
+        double[][] k_rate = new double[15][days]; // 每天中各个主题所占的比例
 
-        double[][][] trans = new double[days-1][15][15];
+        double[][][] trans = new double[days-1][15][15];  // 每天主题之间的转移
 
         for (int i=0; i<total; i++) {
             for (int j=0; j<days; j++) {
@@ -266,24 +389,27 @@ public class Analysis {
             }
         }
 
-        double[] columnSum = sumColumn(k_rate);
+        // 对 k_rate 进行归一化
+//        double[] columnSum = sumColumn(k_rate);
+//
+//        for (int i=0; i<15; i++) {
+//            for (int j=0; j<days; j++) {
+//                k_rate[i][j] /= columnSum[j];
+//            }
+//        }
 
-        for (int i=0; i<15; i++) {
-            for (int j=0; j<days; j++) {
-                k_rate[i][j] /= columnSum[j];
-            }
-        }
+        // 对 trans 进行归一化
+//        for (int i=0; i<days-1; i++) {
+//            double[][] trans_day_k = trans[i];
+//            double[] k_trans = sumRow(trans_day_k);
 
-        for (int i=0; i<days-1; i++) {
-            double[][] trans_day_k = trans[i];
-            double[] k_trans = sumRow(trans_day_k);
-
-            for (int j=0; j<15; j++) {
-                for (int k=0; k<15; k++) {
-                    trans[i][j][k] /= k_trans[j];
-                }
-            }
-        }
+//            for (int j=0; j<15; j++) {
+//                for (int k=0; k<15; k++) {
+//                    trans[i][j][k] /= k_rate[j][i];
+//                    trans[i][j][k] /= k_trans[j];
+//                }
+//            }
+//        }
 
 
         int[] topic_dist = new int[15];
@@ -299,7 +425,11 @@ public class Analysis {
 
         for (int i=0; i<15; i++) {
             for (int j=0; j<days-1; j++) {
-                out.write(k_rate[i][j] + ",");
+                if (k_rate[i][j] < threshold) {
+                    out.write(",");
+                } else {
+                    out.write(k_rate[i][j] + ",");
+                }
             }
             out.write(k_rate[i][days-1] + "\n");
         }
@@ -313,7 +443,11 @@ public class Analysis {
 
             for (int j=0; j<15; j++) {
                 for (int k=0; k<15; k++) {
-                    out.write(trans[i][j][k] + ",");
+                    if (trans[i][j][k] < threshold) {
+                        out.write(",");
+                    } else {
+                        out.write(trans[i][j][k] + ",");
+                    }
                 }
                 out.write("\n");
             }
@@ -335,7 +469,112 @@ public class Analysis {
 
     }
 
+    private static void transitionRoute() throws IOException {
+        File[] files = new File("resources/patientCSV").listFiles();
+        assert files != null;
+
+        BHMM bhmm = (BHMM) readObject("resources/save/bhmm_15_topic.model");
+        assert bhmm != null;
+
+        List<List<Integer>> zt = new ArrayList<>();
+
+        for (File file : files) {
+            zt.add(bhmm.inferOne(file.getPath()));
+        }
+
+        int total = files.length;
+
+        // 将每一天的主题转为每一个阶段的主题
+        List<List<Integer>> stage_topic = new ArrayList<>();
+
+        int max_stage = 0;
+
+        for (int i=0; i<total; i++) {
+
+            List<Integer> ts = zt.get(i);
+            List<Integer> topic = new ArrayList<>();
+            topic.add(ts.get(0));
+
+            for (int t : ts) {
+                if (t != topic.get(topic.size()-1)) {
+                    topic.add(t);
+                }
+            }
+
+            if (max_stage < topic.size()) {
+                max_stage = topic.size();
+            }
+
+            stage_topic.add(topic);
+        }
+
+        double[][] k_rate = new double[15][max_stage];
+
+        double[][][] trans = new double[max_stage-1][15][15];
+        double[][][] trans_rate = new double[max_stage-1][15][15];
+
+        for (int i=0; i<total; i++) {
+            List<Integer> topic = stage_topic.get(i);
+
+            for (int j=0; j<topic.size(); j++) {
+                k_rate[topic.get(j)][j]++;
+            }
+
+            for (int j=0; j<topic.size()-1; j++) {
+                trans[j][topic.get(j)][topic.get(j+1)]++;
+            }
+        }
+
+        BufferedWriter out = new BufferedWriter(new FileWriter(new File("resources/save/transitionRoute.csv")));
+
+        for (double[] k_rate_one : k_rate) {
+            for (double num : k_rate_one) {
+                out.write(num + ",");
+            }
+
+            out.write("\n");
+        }
+
+        out.flush();
+        out.close();
+
+        for (int i=0; i<max_stage-1; i++) {
+
+            for (int j=0; j<15; j++) {
+                for (int k=0; k<15; k++) {
+                    trans_rate[i][j][k] = trans[i][j][k] / k_rate[j][i];
+                }
+            }
+        }
+
+        out = new BufferedWriter(new FileWriter(new File("resources/save/trans.csv")));
+
+        for (int i=0; i<max_stage-1; i++) {
+
+            for (int j=0; j<15; j++) {
+                for (int k=0; k<15; k++) {
+                    out.write(trans[i][j][k] + ",");
+                }
+                out.write("\n");
+            }
+            out.newLine();
+        }
+
+        out.flush();
+        out.close();
+
+    }
+
     public static void main(String[] args) throws IOException {
-        traceRoute();
+//        findPCIandCABG();
+//        oneHundredExamplesLDA();
+//        oneHundredExamples();
+//        patientExamples();
+//        statistic();
+//        analysisParam(15);
+//        traceRoute(0.05);
+//        transitionRoute();
+        los();
+//        perplexity(15);
     }
 }
