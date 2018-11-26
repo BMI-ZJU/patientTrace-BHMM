@@ -222,7 +222,6 @@ public class Utils {
 
         int length = result.size();
 
-
         return IntStream.range(0, length)
                 .boxed()
                 .map(x -> new SimpleEntry<>(result.get(x), value.get(x)))

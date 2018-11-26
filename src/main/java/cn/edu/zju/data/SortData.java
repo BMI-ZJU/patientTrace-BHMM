@@ -116,7 +116,7 @@ public class SortData {
     }
 
     public static void main(String[] args) throws IOException {
-//        listAll();
-        reverseScaler();
+        listAll();
+//        reverseScaler();
     }
 }

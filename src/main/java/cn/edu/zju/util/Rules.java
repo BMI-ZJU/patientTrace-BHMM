@@ -275,12 +275,7 @@ public class Rules {
     }
 
     public static void main(String[] args) {
-        String s = "单腔永久起博器植入术";
-        String[] ss = transOper(s);
-
-        for (String i : ss ) {
-            System.out.println(i);
-        }
+        System.out.println(prescDict.size() + operDict.size() + labtestDict.size());
     }
 
 

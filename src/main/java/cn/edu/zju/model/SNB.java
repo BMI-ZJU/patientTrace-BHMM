@@ -5,12 +5,10 @@ import cn.edu.zju.util.Scaler;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static cn.edu.zju.util.Utils.*;
+import static java.lang.Thread.sleep;
 
 public class SNB implements Serializable{
     private int k; // 主题的数量
@@ -31,14 +29,14 @@ public class SNB implements Serializable{
     Map<String, Integer> event2index;
     Map<String, Scaler> eventScaler;
 
-    public SNB(int k, int iterations, float alpha, float beta, float gamma) {
+    public SNB(int k, int iterations, float alpha, float beta) {
         this.k = k;
         this.iterations = iterations;
         this.alpha = alpha;
         this.beta = beta;
     }
 
-    public SNB(int i, int i1, float v, float v1) {
+    public SNB() {
         this.k = 10;
         this.iterations = 10;
         this.alpha = 1.0f / k;
@@ -262,8 +260,8 @@ public class SNB implements Serializable{
         writeObject(path, this);
     }
 
-    public static BHMM loadModel(String path) {
-        return (BHMM) readObject(path);
+    public static SNB loadModel(String path) {
+        return (SNB) readObject(path);
     }
 
     public int topicNum() {
@@ -290,19 +288,33 @@ public class SNB implements Serializable{
         return phi;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         // 训练模型
-        int k = 15;
+        int k = 5;
+        Date startTime = new Date();
         SNB snb = new SNB(k, 1000, 10f, 0.1f);
         System.out.println("Initialize model");
         snb.initializeModel("resources/patientCSV");
         snb.saveModel("resources/save/initializedModel.model");
         System.out.println("Inference model");
         snb.inferenceModel("resources/patientCSV");
+
+        Date endTime = new Date();
+
+        double costTime = (endTime.getTime() - startTime.getTime()) / 1000.0 / 60;
+        System.out.println("Training model cost " + costTime + " minutes");
+
         System.out.println("update parameters");
         snb.calEstimateParameters();
         System.out.println("Save model");
         snb.saveModel("resources/save/snb_" + k + "_topic.model");
 
+
+        long time1 = System.nanoTime();
+        snb.inferOne("resources/patientCSV/448_1.csv");
+        snb.inferOne("resources/patientCSV/720_8.csv");
+        snb.inferOne("resources/patientCSV/17474_5.csv");
+        long time2 = System.nanoTime();
+        System.out.println((time2 - time1) / 3.0 / 1000000);
     }
 }

@@ -4,6 +4,7 @@ import cn.edu.zju.util.Scaler;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Map;
 
 import static cn.edu.zju.util.Utils.loadDataSet;
@@ -197,16 +198,24 @@ public class LDA implements Serializable{
     }
 
     public static void main(String[] args) throws IOException {
-        int k = 15;
-        LDA lda = new LDA(k, 1000, 1f, 0.1f);
-        System.out.println("Initialize model");
-        lda.initializeModel("resources/patientCSV");
-        System.out.println("Inference model");
-        lda.inferenceModel("resources/patientCSV");
-        System.out.println("update parameter");
-        lda.updateParameters();
-        System.out.println("save model");
-        lda.saveModel("resources/save/lda_" + k + "_topics.model");
+        for (int k=5; k<40; k+=5) {
+            LDA lda = new LDA(k, 1000, 1f, 0.1f);
+            Date startTime = new Date();
+            System.out.println("Initialize model");
+            lda.initializeModel("resources/patientCSV");
+            System.out.println("Inference model");
+            lda.inferenceModel("resources/patientCSV");
+
+            Date endTime = new Date();
+
+            double costTime = (endTime.getTime() - startTime.getTime()) / 1000.0 / 60;
+            System.out.println("Training model cost " + costTime + " minutes");
+
+            System.out.println("update parameter");
+            lda.updateParameters();
+            System.out.println("save model");
+            lda.saveModel("resources/save/lda_" + k + "_topics.model");
+        }
     }
 
 

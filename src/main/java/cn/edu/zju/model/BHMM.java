@@ -3,10 +3,7 @@ package cn.edu.zju.model;
 import cn.edu.zju.util.Scaler;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static cn.edu.zju.util.Utils.*;
 
@@ -59,8 +56,8 @@ public class BHMM implements Serializable{
         File root = new File(rootPath);
         File[] files = root.listFiles();
 
-        event2index = (Map<String, Integer>) readObject("resources/save/event2index.model");
         eventScaler = (Map<String, Scaler>) readObject("resources/save/eventScaler.model");
+        event2index = (Map<String, Integer>) readObject("resources/save/event2index.model");
 
         assert files != null;
         assert event2index != null;
@@ -335,28 +332,30 @@ public class BHMM implements Serializable{
     public static void main(String[] args) throws IOException {
         // 训练模型
         int k = 35;
+        Date startTime = new Date();
         BHMM bhmm = new BHMM(k, 1000, 10f, 0.1f, 0.1f);
         System.out.println("Initialize model");
         bhmm.initializeModel("resources/patientCSV");
         bhmm.saveModel("resources/save/initializedModel.model");
         System.out.println("Inference model");
         bhmm.inferenceModel("resources/patientCSV");
+
+        Date endTime = new Date();
+
+        double costTime = (endTime.getTime() - startTime.getTime()) / 1000.0 / 60;
+        System.out.println("Training model cost " + costTime + " minutes");
+
         System.out.println("update parameters");
         bhmm.calEstimateParameters();
         System.out.println("Save model");
         bhmm.saveModel("resources/save/bhmm_" + k + "_topic.model");
 
-
-
-
-        // 患者样本分析
-//        BHMM bhmm = (BHMM) readObject("resources/save/bhmm1-19-22-25.model");
-//        assert bhmm != null;
-//        List<Integer> result = bhmm.inferOne("resources/patientCSV/109502_3.csv");
-//        for (Integer i : result) {
-//            System.out.print(i + " ");
-//        }
-
+        long time1 = System.nanoTime();
+        bhmm.inferOne("resources/patientCSV/448_1.csv");
+        bhmm.inferOne("resources/patientCSV/720_8.csv");
+        bhmm.inferOne("resources/patientCSV/17474_5.csv");
+        long time2 = System.nanoTime();
+        System.out.println((time2 - time1) / 3.0 / 1000000);
 
     }
 }

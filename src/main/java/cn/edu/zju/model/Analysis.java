@@ -571,10 +571,10 @@ public class Analysis {
 //        oneHundredExamples();
 //        patientExamples();
 //        statistic();
-//        analysisParam(15);
+        analysisParam(15);
 //        traceRoute(0.05);
 //        transitionRoute();
-        los();
+//        los();
 //        perplexity(15);
     }
 }

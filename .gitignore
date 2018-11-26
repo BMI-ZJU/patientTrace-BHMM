@@ -39,3 +39,6 @@ __pycache__/
 
 # binary file
 *.pdf
+
+# some scripts
+scripts
