@@ -2,7 +2,7 @@ package cn.edu.zju.longitudinal;
 
 import com.csvreader.CsvReader;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,10 +65,28 @@ public class Data {
 
         System.out.println("...");
         return result;
+    }
 
+    public static int[] getV() {
+        int[] result = new int[109];
+        File file = new File("resources/longitudinal data/V.txt");
+        BufferedReader reader;
+        try {
+            reader = new BufferedReader(new FileReader(file));
+            String tmp;
+            int line = 0;
+            while ((tmp = reader.readLine()) != null) {
+                result[line] = Integer.valueOf(tmp);
+                line++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     public static void main(String[] args) throws IOException {
-        loadData("resources/longitudinal data/feature_df.csv");
+//        loadData("resources/longitudinal data/feature_df.csv");
+        getV();
     }
 }
